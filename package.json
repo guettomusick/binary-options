@@ -1,0 +1,25 @@
+{
+  "name": "binary-options",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "migrate-reset": "truffle migrate --reset"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guettomusick/binary-options.git"
+  },
+  "author": "Fernando Caamaño <fcaamano@qonico.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guettomusick/binary-options/issues"
+  },
+  "homepage": "https://github.com/guettomusick/binary-options#readme",
+  "dependencies": {
+    "truffle": "^5.1.50"
+  }
+}
