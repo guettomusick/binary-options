@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/guettomusick/binary-options#readme",
   "dependencies": {
+    "@truffle/hdwallet-provider": "^1.1.1",
     "truffle": "^5.1.50"
   }
 }

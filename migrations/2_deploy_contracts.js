@@ -1,5 +1,5 @@
-var SimpleStorage = artifacts.require('SimpleStorage');
+var BinaryOptions = artifacts.require('BinaryOptions');
 
 module.exports = function(deployer) {
-  deployer.deploy(SimpleStorage);
+  deployer.deploy(BinaryOptions);
 };
