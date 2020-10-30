@@ -8,7 +8,9 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 
 contract BinaryOptions {
   //Overflow safe operators
+  using SafeMath for uint32;
   using SafeMath for uint256;
+  address private owner;
 
   // Constants
   uint256 constant interval = 10 minutes;
@@ -21,7 +23,6 @@ contract BinaryOptions {
 
   //Precomputing hash of strings
   bytes32 ethHash = keccak256(abi.encodePacked('ETH'));
-  address payable contractAddr;
 
   BinToken public token;
 
@@ -29,7 +30,7 @@ contract BinaryOptions {
   event Sold(uint256 amount);
 
   struct Round {
-    uint256[] options; // Options on this round
+    uint32[] options; // Options on this round
     bool executed; // If the round has been executed
     uint256 price; // Price at the end of the round
     uint256 higherAmount;
@@ -40,9 +41,9 @@ contract BinaryOptions {
   struct Option {
     uint256 price; // Price in USD (18 decimal places) when the option was issued
     bool higher; // Type of higher/lower bet
-    uint256 execute; // Unix timeStamp of expiration time
+    uint32 execute; // Unix timeStamp of expiration time
     uint256 amount; // Amount of tokens the option contract is for
-    uint256 id; // Unique ID of option, also array index
+    uint32 id; // Unique ID of option, also array index
     uint256 payout; // Payout of winner bet with 3 decimal places
     address payable buyer; //Buyer of option
     bool winner;
@@ -50,9 +51,9 @@ contract BinaryOptions {
 
   Option[] public ethOpts;
   Option[] public linkOpts;
-  mapping(uint256 => Round) public ethRounds;
-  mapping(address => uint256[]) public pendingEthOps;
-  mapping(address => uint256[]) public collectedEthOps;
+  mapping(uint32 => Round) public ethRounds;
+  mapping(address => uint32[]) public pendingEthOps;
+  mapping(address => uint32[]) public collectedEthOps;
 
   //Kovan feeds: https://docs.chain.link/docs/reference-contracts
   constructor() public {
@@ -62,7 +63,7 @@ contract BinaryOptions {
     //LINK/USD Kovan feed
     linkFeed = AggregatorV3Interface(0x396c5E36DD0a0F5a5D33dae44368D4193f69a1F0);
 
-    contractAddr = address(uint160(address(this)));
+    owner = msg.sender;
   }
 
   //Returns the latest LINK price
@@ -97,12 +98,20 @@ contract BinaryOptions {
     return uint256(price);
   }
 
+  function getBinSupply() public view returns (uint256) {
+    return token.totalSupply();
+  }
+
+  function getCollateral() public view returns (uint256) {
+    return address(this).balance;
+  }
+
   function getPrice() public view returns (uint256) {
     uint256 supply = token.totalSupply();
     uint256 collateral = address(this).balance;
 
     if(supply == 0 || collateral == 0) {
-      return 1;
+      return 1 ether;
     }
 
     
@@ -119,7 +128,7 @@ contract BinaryOptions {
     return amount.mul(price).div(1 ether);
   }
 
-  function getPayOut(uint256 timeStamp) public view returns(uint256) {
+  function getPayOut(uint32 timeStamp) public view returns(uint256) {
     return 80000;
   }
 
@@ -139,11 +148,11 @@ contract BinaryOptions {
     emit Sold(amount);
   }
 
-  function place(uint256 timeStamp, uint256 amount, bool higher) public {
+  function place(uint32 timeStamp, uint256 amount, bool higher) public {
     require(amount > 0, "You need to send some BIN");
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= amount, "Check the token allowance");
-    uint256 nextRound = now - now.mod(interval) + interval;
+    uint256 nextRound = now.sub(now.mod(interval)).add(interval);
     require(timeStamp > nextRound, "You can't bet for next round");
     require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
     token.transferFrom(msg.sender, address(this), amount);
@@ -154,21 +163,22 @@ contract BinaryOptions {
     } else {
       round.lowerAmount.add(amount);
     }
-    round.options.push(ethOpts.length);
-    pendingEthOps[msg.sender].push(ethOpts.length);
+    uint32 index = uint32(ethOpts.length);
+    round.options.push(index);
+    pendingEthOps[msg.sender].push(index);
     ethOpts.push(Option(
       getEthPrice(),
       higher,
       timeStamp,
       amount,
-      ethOpts.length,
+      index,
       getPayOut(timeStamp),
       msg.sender,
       false
     ));
   }
 
-  function executeRound(uint256 timeStamp) public {
+  function executeRound(uint32 timeStamp) public {
     require(msg.sender == address(this));
     require(timeStamp.mod(interval) == 0, "timeStamp must be multiple of interval");
     require(ethRounds[timeStamp].options.length > 0, "No data for current round");
@@ -178,8 +188,8 @@ contract BinaryOptions {
     ethRounds[timeStamp].price = getEthPrice();
   }
 
-  function deletePending(uint256 index) internal {
-    uint256[] storage pending = pendingEthOps[msg.sender];
+  function deletePending(uint32 index) internal {
+    uint32[] storage pending = pendingEthOps[msg.sender];
     
     collectedEthOps[msg.sender].push(pending[index]);
     // remove element from array
@@ -191,10 +201,10 @@ contract BinaryOptions {
   }
 
   function collect() public {
-    uint256[] storage pending = pendingEthOps[msg.sender];
+    uint32[] storage pending = pendingEthOps[msg.sender];
     uint256 amount;
 
-    for (uint256 i=0; i<pending.length;) {
+    for (uint32 i=0; i<pending.length;) {
       Option storage option = ethOpts[pending[i]];
       Round storage round = ethRounds[option.execute];
       if (round.options.length == 0) {
