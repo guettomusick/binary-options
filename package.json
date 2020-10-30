@@ -20,7 +20,9 @@
   },
   "homepage": "https://github.com/guettomusick/binary-options#readme",
   "dependencies": {
+    "@openzeppelin/contracts": "^2.4.0",
     "@truffle/hdwallet-provider": "^1.1.1",
+    "ethereum-waffle": "^3.1.2",
     "truffle": "^5.1.50"
   }
 }
