@@ -1,7 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { useLoadBinContract } from './shared/hooks/useBinToken';
+import { useWeb3, useAccounts } from './shared/hooks/useWeb3';
+import { useContract as useBinaryOptionsContract } from './shared/hooks/useBinaryOptions';
+import { useContract as useBinTokenContract } from './shared/hooks/useBinToken';
+
 import Loading from './components/Loading';
 import Buy from './components/Buy';
 import Sell from './components/Sell';
@@ -13,16 +16,27 @@ const Container = styled.div`
   padding: 50px;
 `;
 
+const loading = (text) => <Loading>{ text }</Loading>;
+
 const App = () => {
-  const ready = useLoadBinContract();
+  const web3 = useWeb3();
+  const accounts = useAccounts();
+  const binaryOptionsContract = useBinaryOptionsContract();
+  const binTokenContract = useBinTokenContract();
 
-  if (!ready) {
-    return <Loading>Loading Contracts...</Loading>;
+  if (!web3) {
+    return loading('Loading Web3...');
   }
-
+  if (accounts.length === 0) {
+    return loading('Loading Accounts...');
+  }
+  if (!binaryOptionsContract || !binTokenContract) {
+    return loading('Loading Contracts...');
+  }
+  
   return (
     <Container>
-      <Buy />
+      <Buy/>
       <Sell />
     </Container>
   );

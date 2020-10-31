@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { useGetPrice, useBuy } from '../shared/hooks/useBinaryOptions';
-import { useGetBinBalance } from '../shared/hooks/useBinToken';
+// import { useGetPrice, useBuy } from '../shared/hooks/useBinaryOptions';
+// import { useGetBinBalance } from '../shared/hooks/useBinToken';
 import { useHandleChangeWithState } from '../shared/hooks/useHandleChange';
 
 import NesContainer from '../shared/components/NesContainer';
@@ -12,21 +12,19 @@ import NesButton from '../shared/components/NesButton';
 import NesAction from '../shared/components/NesAction';
 
 const Buy = () => {
-  const price = useGetPrice();
-  const balance = useGetBinBalance();
-  const [buy, TXObjects, transactionStack] = useBuy();
+  const price = 0; //useGetPrice();
+  const balance = 0; //useGetBinBalance();
+//   const [buy, tx] = useBuy();
   const [{ amount }, changeAmountHandler, setData] = useHandleChangeWithState({amount: 0});
-
-  console.log(TXObjects);
-  console.log(transactionStack);
-
-  const buyHandler = () => {
-    buy(amount);
-  }
 
   const clearHandler = () => {
     setData({ amount: 0});
-  }
+  };
+
+  const buyHandler = () => {
+//     buy(amount);
+    clearHandler();
+  };
 
   return (
     <NesContainer className='with-title'>

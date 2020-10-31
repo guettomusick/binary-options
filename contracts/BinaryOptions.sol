@@ -106,9 +106,9 @@ contract BinaryOptions {
     return address(this).balance;
   }
 
-  function getPrice() public view returns (uint256) {
+  function getPrice(uint256 amountTobuy) public view returns (uint256) {
     uint256 supply = token.totalSupply();
-    uint256 collateral = address(this).balance;
+    uint256 collateral = address(this).balance.sub(amountTobuy);
 
     if(supply == 0 || collateral == 0) {
       return 1 ether;
@@ -118,13 +118,11 @@ contract BinaryOptions {
     return collateral.mul(1 ether).div(supply);
   }
 
-  function ehterToBin(uint256 amount) public view returns(uint256) {
-    uint256 price = getPrice();
+  function ehterToBin(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(1 ether).div(price);
   }
 
-  function binToEther(uint256 amount) public view returns(uint256) {
-    uint256 price = getPrice();
+  function binToEther(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(price).div(1 ether);
   }
 
@@ -135,7 +133,8 @@ contract BinaryOptions {
   function buy() payable public {
     uint256 amountTobuy = msg.value;
     require(amountTobuy > 0, "You need to send some Ether");
-    token.mint(msg.sender, ehterToBin(amountTobuy));
+    uint256 price = getPrice(amountTobuy);
+    token.mint(msg.sender, ehterToBin(amountTobuy, price));
     emit Bought(amountTobuy);
   }
 
@@ -143,8 +142,9 @@ contract BinaryOptions {
     require(amount > 0, "You need to sell at least some tokens");
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= amount, "Check the token allowance");
+    uint256 price = getPrice(0);
     token.burnFrom(msg.sender, amount);
-    msg.sender.transfer(binToEther(amount));
+    msg.sender.transfer(binToEther(amount, price));
     emit Sold(amount);
   }
 
