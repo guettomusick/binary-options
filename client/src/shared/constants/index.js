@@ -1,0 +1,1 @@
+export const ether = 1000000000000000000;

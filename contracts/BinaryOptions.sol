@@ -179,7 +179,7 @@ contract BinaryOptions {
   }
 
   function executeRound(uint32 timeStamp) public {
-    require(msg.sender == address(this));
+    require(msg.sender == owner);
     require(timeStamp.mod(interval) == 0, "timeStamp must be multiple of interval");
     require(ethRounds[timeStamp].options.length > 0, "No data for current round");
     require(!ethRounds[timeStamp].executed, "Round already executed");
