@@ -1,1 +1,3 @@
-export const ether = 1000000000000000000;
+import BigNumber from 'bignumber.js';
+
+export const ether = new BigNumber('1000000000000000000');

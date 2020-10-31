@@ -1,59 +1,83 @@
-import { useCallback, useState } from 'react';
-import { drizzleReactHooks } from '@drizzle/react-plugin'
-import { ether } from '../constants';
+import { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+// import BigNumber from 'bignumber.js';
 
-export const useBinaryOptions = () => {
-  const { contracts } = drizzleReactHooks.useDrizzleState(({ contracts }) => ({ contracts }));
-  return contracts.BinaryOptions;
+// import { ether } from '../constants';
+import { useAddContract } from './useAddContract';
+import { setContract, setToken } from '../redux/binaryOptions';
+
+import BinaryOptions from '../../contracts/BinaryOptions.json';
+
+export const useContract = () => {
+  const contract = useSelector(state => state.binaryOptions.contract);
+
+  return useAddContract(
+    contract,
+    setContract,
+    BinaryOptions,
+  );
 }
 
-export const useGetPrice = () => {
-  const { useCacheCall } = drizzleReactHooks.useDrizzle();
+export const useToken = () => {
+  const dispatch = useDispatch();
+  const contract = useContract();
+  const token = useSelector(state => state.binaryOptions.token);
+  
+  useEffect(() => {
+    if (!token && contract) {
+      contract.methods.token().call()
+        .then(token => {
+          dispatch(setToken(token));
+        })
+        .catch(console.error);
+    }
+  }, [dispatch, contract, token]);
 
-  return useCacheCall('BinaryOptions', 'getPrice')/ether;
+  return token;
 };
 
-export const useBuy = () => {
-  const transactionStack = drizzleReactHooks
-    .useDrizzleState(({ transactionStack }) => ({ transactionStack }));
-  const { drizzle } = drizzleReactHooks.useDrizzle();
-  const [stackId, setStackId] = useState();
+// // export const useBinaryOptions = () => {
+// //   const { contracts } = drizzleReactHooks.useDrizzleState(({ contracts }) => ({ contracts }));
+// //   return contracts.BinaryOptions;
+// // }
 
-  const buy = useCallback((amount) =>
-    setStackId(drizzle.contracts.BinaryOptions.methods.buy.cacheSend({
-      value: Math.round(amount*ether)
-    })),
-    [drizzle.contracts.BinaryOptions.methods.buy],
-  );
+// export const useGetPrice = () => {
+//   const price = useDrizzleCache(CONTRACT_NAME, 'getPrice', 0);
+//   return price && new BigNumber(price).dividedBy(ether).toNumber() || 0;
+// };
 
-  return [
-    buy,
-    stackId && transactionStack[stackId],
-    transactionStack,
-  ];
-};
+// export const useBuy = () => {
+//   const [send, tx] = useDrizzleSend(CONTRACT_NAME, 'buy');
 
-export const useSell = () => {
-  const transactionStack = drizzleReactHooks
-    .useDrizzleState(({ transactionStack }) => ({ transactionStack }));
-  const { drizzle } = drizzleReactHooks.useDrizzle();
-  const [stackId, setStackId] = useState();
+//   const buy = useCallback((amount) =>
+//     send({ value: ether.multipliedBy(amount).toString() }),
+//     [send],
+//   );
 
-  const sell = useCallback((amount) =>
-    setStackId(drizzle.contracts.BinaryOptions.methods.sell.cacheSend(
-      Math.round(amount*ether),
-    )),
-    [drizzle.contracts.BinaryOptions.methods.sell],
-  );
+//   return [ buy, tx ];
+// };
 
-  return [
-    sell,
-    stackId && transactionStack[stackId],
-    transactionStack,
-  ];
-};
+// export const useSell = () => {
+//   const transactionStack = drizzleReactHooks
+//     .useDrizzleState(({ transactionStack }) => ({ transactionStack }));
+//   const { drizzle } = drizzleReactHooks.useDrizzle();
+//   const [stackId, setStackId] = useState();
 
-export const useGetAddress = () => {
-  const { drizzle } = drizzleReactHooks.useDrizzle();
-  return drizzle.contracts.BinaryOptions.address;
-}
+//   const sell = useCallback((amount) =>
+//     setStackId(drizzle.contracts.BinaryOptions.methods.sell.cacheSend(
+//       ether.multipliedBy(amount).toString(),
+//     )),
+//     [drizzle.contracts.BinaryOptions.methods.sell],
+//   );
+
+//   return [
+//     sell,
+//     stackId && transactionStack[stackId],
+//     transactionStack,
+//   ];
+// };
+
+// export const useGetAddress = () => {
+//   const { drizzle } = drizzleReactHooks.useDrizzle();
+//   return drizzle.contracts.BinaryOptions.address;
+// }

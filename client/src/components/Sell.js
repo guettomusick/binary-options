@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { useGetBinBalance, useNeedAllowance, useNeedBalance } from '../shared/hooks/useBinToken';
-import { useGetPrice, useSell } from '../shared/hooks/useBinaryOptions';
+// import { useGetBinBalance, useNeedAllowance, useNeedBalance } from '../shared/hooks/useBinToken';
+// import { useGetPrice, useSell } from '../shared/hooks/useBinaryOptions';
 import { useHandleChangeWithState } from '../shared/hooks/useHandleChange';
 
 import NesContainer from '../shared/components/NesContainer';
@@ -10,31 +10,31 @@ import NesButton from '../shared/components/NesButton';
 import NesAction from '../shared/components/NesAction';
 
 const Sell = () => {
-  const price = useGetPrice();
-  const balance = useGetBinBalance();
-  const [sell] = useSell();
+  const price = 0; //useGetPrice();
+  const balance = 0; //useGetBinBalance();
+  // const [sell] = useSell();
   const [{ amount }, changeAmountHandler, setData] = useHandleChangeWithState({amount: 0});
-  const [needBalance] = useNeedBalance();
-  const [needAllowance] = useNeedAllowance();
-
-  const sellHandler = () => {
-    if (!needBalance(amount)) {
-      console.log('not enough bin');
-      return;
-    }
-    
-    if (!needAllowance(amount)) {
-      console.log('need allowance');
-      return;
-    }
-    
-    console.log('sellHandler: sell');
-    sell(amount);
-  }
+  // const [needBalance] = useNeedBalance();
+  // const [needAllowance] = useNeedAllowance();
 
   const clearHandler = () => {
     setData({ amount: 0});
-  }
+  };
+
+  const sellHandler = () => {
+    // if (!needBalance(amount)) {
+    //   console.log('not enough bin');
+    //   return;
+    // }
+    
+    // if (!needAllowance(amount)) {
+    //   console.log('need allowance');
+    //   return;
+    // }
+    
+    // sell(amount);
+    clearHandler();
+  };
 
   return (
     <NesContainer className='is-dark with-title'>
