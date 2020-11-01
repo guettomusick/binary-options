@@ -66,7 +66,9 @@ contract BinaryOptions {
     owner = msg.sender;
   }
 
-  //Returns the latest LINK price
+  /**
+    @dev Returns the latest LINK price
+   */ 
   function getLinkPrice() public view returns (uint256) {
     (
       uint80 roundID, 
@@ -82,7 +84,9 @@ contract BinaryOptions {
     return uint256(price);
   }
 
-  //Returns the latest LINK price
+  /**
+    @dev Returns the latest LINK price
+   */ 
   function getEthPrice() public view returns (uint256) {
     (
       uint80 roundID, 
@@ -98,39 +102,66 @@ contract BinaryOptions {
     return uint256(price);
   }
 
+  /**
+    @dev Gets the BIN token supply
+   */
   function getBinSupply() public view returns (uint256) {
     return token.totalSupply();
   }
 
+  /**
+    @dev Returns the current collateral balance
+   */
   function getCollateral() public view returns (uint256) {
     return address(this).balance;
   }
 
+  /**
+    @dev Returns the price for the amount to purchase
+    @param amountTobuy The number of tokens to purchase
+   */
   function getPrice(uint256 amountTobuy) public view returns (uint256) {
     uint256 supply = token.totalSupply();
     uint256 collateral = address(this).balance.sub(amountTobuy);
 
     if(supply == 0 || collateral == 0) {
-      return 0.0001 ether;
+      return 0.0001 ether; 
     }
 
     
     return collateral.mul(1 ether).div(supply);
   }
 
+  /**
+    @dev Returns the token price in ether
+    @param amount The amount of BIN tokens to buy
+   */
   function ehterToBin(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(1 ether).div(price);
   }
 
+  /**
+    @dev Returns the value of the token in ether
+    @param amount The amount to convert
+    @param price The price of the token
+   */
   function binToEther(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(price).div(1 ether);
   }
 
+  /**
+    @dev Returns the payout at a given timestamp
+    @param timeStamp The timestamp at which to get the payout
+   */
   function getPayOut(uint32 timeStamp) public view returns(uint256) {
+    // TODO Get an accurate dynamic payout
     return 80000;
   }
 
-  function buy() payable public {
+  /**
+    @dev Mint a given amount of tokens to the sender
+   */
+  function buy() payable public { 
     uint256 amountTobuy = msg.value;
     require(amountTobuy > 0, "You need to send some Ether");
     uint256 price = getPrice(amountTobuy);
@@ -138,6 +169,10 @@ contract BinaryOptions {
     emit Bought(amountTobuy);
   }
 
+  /**
+    @dev Burns a given number of tokens
+    @param amount The number of tokens to sell/burn
+   */
   function sell(uint256 amount) public {
     require(amount > 0, "You need to sell at least some tokens");
     uint256 allowance = token.allowance(msg.sender, address(this));
@@ -148,6 +183,9 @@ contract BinaryOptions {
     emit Sold(amount);
   }
 
+  /** TODO
+    
+   */
   function place(uint32 timeStamp, uint256 amount, bool higher) public {
     require(amount > 0, "You need to send some BIN");
     uint256 allowance = token.allowance(msg.sender, address(this));

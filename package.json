@@ -24,6 +24,7 @@
     "@truffle/hdwallet-provider": "^1.1.1",
     "bignumber.js": "^9.0.1",
     "ethereum-waffle": "^3.1.2",
+    "leche": "^2.3.0",
     "truffle": "^5.1.50"
   }
 }
