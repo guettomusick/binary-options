@@ -8,6 +8,10 @@ const NesAction = styled.div`
   button {
     margin-left: 10px;
   }
+
+  p {
+    flex-grow: 1;
+  }
 `;
 
 export default NesAction;
