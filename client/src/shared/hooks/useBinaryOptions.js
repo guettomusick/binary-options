@@ -1,15 +1,51 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-// import BigNumber from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 
-// import { ether } from '../constants';
+import { ether } from '../constants';
+import { useAccount } from './useWeb3';
 import { useAddContract } from './useAddContract';
-import { setContract, setToken } from '../redux/binaryOptions';
+import { setContract, setToken, setPrice } from '../redux/binaryOptions';
 
 import BinaryOptions from '../../contracts/BinaryOptions.json';
 
-export const useContract = () => {
+export const useGetPrice = () => {
+  const contract = useContract();
+  const dispatch = useDispatch();
+  
+  const getPrice = useCallback(() => {
+    contract.methods.getPrice(0).call()
+      .then((price) => dispatch(setPrice(new BigNumber(price).dividedBy(ether).toNumber() || 0)))
+      .catch(console.error);
+  }, [dispatch, contract]);
+
+  return contract ? getPrice : false;
+};
+
+const useRegisterEvents = (contract) => {
+  const account = useAccount();
+  const getPrice = useGetPrice();
+
+  useEffect(() => {
+    if (contract && getPrice) {
+      contract.events.Bought()
+        .on('data', (event) => {
+          console.log('Event Bought', event);
+          getPrice();
+        });
+      contract.events.Sold()
+        .on('data', (event) => {
+          console.log('Event Sold', event);
+          getPrice();
+        });
+      getPrice();
+    }
+  }, [account, contract, getPrice]);
+};
+
+export const useInitializeContract = () => {
   const contract = useSelector(state => state.binaryOptions.contract);
+  useRegisterEvents(contract);
 
   return useAddContract(
     contract,
@@ -17,6 +53,8 @@ export const useContract = () => {
     BinaryOptions,
   );
 }
+
+export const useContract = () => useSelector(state => state.binaryOptions.contract);
 
 export const useToken = () => {
   const dispatch = useDispatch();
@@ -36,48 +74,50 @@ export const useToken = () => {
   return token;
 };
 
-// // export const useBinaryOptions = () => {
-// //   const { contracts } = drizzleReactHooks.useDrizzleState(({ contracts }) => ({ contracts }));
-// //   return contracts.BinaryOptions;
-// // }
+export const useAddress = () => {
+  const contract = useContract();
+  return contract && contract.options.address;
+}
 
-// export const useGetPrice = () => {
-//   const price = useDrizzleCache(CONTRACT_NAME, 'getPrice', 0);
-//   return price && new BigNumber(price).dividedBy(ether).toNumber() || 0;
-// };
+export const usePrice = () => {
+  const price = useSelector(state => state.binaryOptions.price);
+  
+  const getEth = useCallback((bins) => price ? bins*price : false, [price]);
+  const getBin = useCallback((eth) => price ? eth/price : false, [price]);
+  
+  return {
+    price,
+    getEth,
+    getBin,
+  }
+};
 
-// export const useBuy = () => {
-//   const [send, tx] = useDrizzleSend(CONTRACT_NAME, 'buy');
+export const useBuy = () => {
+  const contract = useContract();
 
-//   const buy = useCallback((amount) =>
-//     send({ value: ether.multipliedBy(amount).toString() }),
-//     [send],
-//   );
+  const buy = useCallback((amount) =>
+    contract.methods.buy().send({ value: ether.multipliedBy(amount).toFixed() })
+      .on('transactionHash', (hash) => console.log('buy transactionHash', hash))
+      .on('confirmation', (confirmationNumber, receipt) => console.log('buy confirmation', confirmationNumber, receipt))
+      .on('receipt', (receipt) => console.log('buy receipt', receipt))
+      .on('error', (error) => console.error('buy error', error)),
+    [contract],
+  );
 
-//   return [ buy, tx ];
-// };
+  return buy;
+};
 
-// export const useSell = () => {
-//   const transactionStack = drizzleReactHooks
-//     .useDrizzleState(({ transactionStack }) => ({ transactionStack }));
-//   const { drizzle } = drizzleReactHooks.useDrizzle();
-//   const [stackId, setStackId] = useState();
+export const useSell = () => {
+  const contract = useContract();
 
-//   const sell = useCallback((amount) =>
-//     setStackId(drizzle.contracts.BinaryOptions.methods.sell.cacheSend(
-//       ether.multipliedBy(amount).toString(),
-//     )),
-//     [drizzle.contracts.BinaryOptions.methods.sell],
-//   );
+  const sell = useCallback((amount) =>
+    contract.methods.sell(ether.multipliedBy(amount).toFixed()).send()
+      .on('transactionHash', (hash) => console.log('sell transactionHash', hash))
+      .on('confirmation', (confirmationNumber, receipt) => console.log('sell confirmation', confirmationNumber, receipt))
+      .on('receipt', (receipt) => console.log('sell receipt', receipt))
+      .on('error', (error) => console.error('sell error', error)),
+    [contract],
+  );
 
-//   return [
-//     sell,
-//     stackId && transactionStack[stackId],
-//     transactionStack,
-//   ];
-// };
-
-// export const useGetAddress = () => {
-//   const { drizzle } = drizzleReactHooks.useDrizzle();
-//   return drizzle.contracts.BinaryOptions.address;
-// }
+  return sell;
+};

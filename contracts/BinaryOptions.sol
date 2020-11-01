@@ -111,7 +111,7 @@ contract BinaryOptions {
     uint256 collateral = address(this).balance.sub(amountTobuy);
 
     if(supply == 0 || collateral == 0) {
-      return 1 ether;
+      return 0.0001 ether;
     }
 
     

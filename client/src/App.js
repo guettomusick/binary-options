@@ -2,8 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 
 import { useWeb3, useAccounts } from './shared/hooks/useWeb3';
-import { useContract as useBinaryOptionsContract } from './shared/hooks/useBinaryOptions';
-import { useContract as useBinTokenContract } from './shared/hooks/useBinToken';
+import { useInitializeContract as useBinaryOptionsContract } from './shared/hooks/useBinaryOptions';
+import { useInitializeContract as useBinTokenContract } from './shared/hooks/useBinToken';
 
 import Loading from './components/Loading';
 import Buy from './components/Buy';

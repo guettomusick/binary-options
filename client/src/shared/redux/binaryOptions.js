@@ -5,6 +5,9 @@ export const setContract = (contract) => ({ type: SET_BINARY_OPTIONS_CONTRACT, p
 const SET_BINARY_OPTIONS_TOKEN = 'SET_BINARY_OPTIONS_TOKEN';
 export const setToken = (token) => ({ type: SET_BINARY_OPTIONS_TOKEN, payload: token });
 
+const SET_BINARY_OPTIONS_PRICE = 'SET_BINARY_OPTIONS_PRICE';
+export const setPrice = (price) => ({ type: SET_BINARY_OPTIONS_PRICE, payload: price });
+
 // reducer
 const initialState = {
   contract: null,
@@ -24,6 +27,11 @@ const binaryOptions = (state = initialState, action) => {
       return {
         ...state,
         token: payload,
+      };
+    case SET_BINARY_OPTIONS_PRICE:
+      return {
+        ...state,
+        price: payload,
       };
     default:
       return state;
