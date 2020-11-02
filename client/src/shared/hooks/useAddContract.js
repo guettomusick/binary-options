@@ -13,7 +13,7 @@ export const useAddContract = (contract, action, contractInterface, address) => 
       web3.eth.net.getId()
         .then(networkId => {
           const networks = contractInterface.networks;
-          const contractAddress = address || networks && networks[networkId] && networks[networkId].address;
+          const contractAddress = address || (networks && networks[networkId] && networks[networkId].address);
 
           if (contractAddress) {
             const instance = new web3.eth.Contract(
