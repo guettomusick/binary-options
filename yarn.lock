@@ -4217,6 +4217,11 @@ lcid@^1.0.0:
   dependencies:
     invert-kv "^1.0.0"
 
+leche@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/leche/-/leche-2.3.0.tgz#a25d01776dfff838e4ca83985f61cc3fe852a15f"
+  integrity sha512-Phl6cy83b17ZxHZXZgkf0FIAZ/NWKxfOd6B1Q78OMO9o9HwVu5CigQcQ0+cZhpCtbcmLzkkBS6t+E9jXuZ6ziA==
+
 level-codec@^9.0.0:
   version "9.0.2"
   resolved "https://registry.yarnpkg.com/level-codec/-/level-codec-9.0.2.tgz#fd60df8c64786a80d44e63423096ffead63d8cbc"
