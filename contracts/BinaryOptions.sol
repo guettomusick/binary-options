@@ -66,7 +66,9 @@ contract BinaryOptions {
     owner = msg.sender;
   }
 
-  //Returns the latest LINK price
+  /**
+    @dev Returns the latest LINK price
+   */ 
   function getLinkPrice() public view returns (uint256) {
     (
       uint80 roundID, 
@@ -82,7 +84,9 @@ contract BinaryOptions {
     return uint256(price);
   }
 
-  //Returns the latest ETH price
+  /**
+    @dev Returns the latest ETH price
+   */ 
   function getEthPrice() public view returns (uint256) {
     (
       uint80 roundID, 
@@ -98,15 +102,24 @@ contract BinaryOptions {
     return uint256(price);
   }
 
+  /**
+    @dev Gets the BIN token supply
+   */
   function getBinSupply() public view returns (uint256) {
     return token.totalSupply();
   }
 
+  /**
+    @dev Returns the current collateral balance
+   */
   function getCollateral() public view returns (uint256) {
     return address(this).balance;
   }
 
-  /** Calculate price based on ETH balance and Token supply */
+  /**
+    @dev Returns the price for the amount to purchase
+    @param amountTobuy The number of tokens to purchase if called from buy method or 0
+   */
   function getPrice(uint256 amountTobuy) public view returns (uint256) {
     uint256 supply = token.totalSupply();
     // need to substract Ether amount to buy as it's already present on wallet
@@ -115,30 +128,43 @@ contract BinaryOptions {
 
     // Initial price
     if(supply == 0 || collateral == 0) {
-      return 0.0001 ether;
+      return 0.0001 ether; 
     }
 
     // return price in wei
     return collateral.mul(1 ether).div(supply);
   }
 
-
-  /** Convert ether to bin using current price */
+  /**
+    @dev Returns the token amount from ether using current token price
+    @param amount The amount of BIN tokens to buy
+   */
   function ehterToBin(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(1 ether).div(price);
   }
 
-  /** Convert bin to ether using current price */
+  /**
+    @dev Returns the ether amount from token using current token price
+    @param amount The amount to convert
+    @param price The price of the token
+   */
   function binToEther(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(price).div(1 ether);
   }
 
+  /**
+    @dev Returns the payout at a given timestamp
+    @param timeStamp The timestamp at which to get the payout
+   */
   function getPayOut(uint32 timeStamp) public view returns(uint256) {
+    // TODO Get an accurate dynamic payout
     return 80000;
   }
 
-  /** Buy tokens with ETH */
-  function buy() payable public {
+  /**
+    @dev Mint a given amount of tokens to the sender paying with ether at current price
+   */
+  function buy() payable public { 
     uint256 amountTobuy = msg.value;
     require(amountTobuy > 0, "You need to send some Ether");
 
@@ -150,7 +176,10 @@ contract BinaryOptions {
     emit Bought(amountTobuy);
   }
 
-  /** Sell tokens and convert to ETH */
+  /**
+    @dev Burns a given number of tokens on the sender wallet and transfer ether at current price
+    @param amount The number of tokens to sell/burn
+   */
   function sell(uint256 amount) public {
     require(amount > 0, "You need to sell at least some tokens");
     uint256 allowance = token.allowance(msg.sender, address(this));
@@ -167,7 +196,12 @@ contract BinaryOptions {
     emit Sold(amount);
   }
 
-  /** Place new binaru option */
+  /**
+    @dev Place a new binary option for ether price
+    @param timeStamp The round to execute, must be interval multiplus and greater than next round
+    @param amount The number of tokens to bet
+    @param higher bet for higher or lower
+   */
   function place(uint32 timeStamp, uint256 amount, bool higher) public {
     require(amount > 0, "You need to send some BIN");
     uint256 allowance = token.allowance(msg.sender, address(this));
@@ -204,9 +238,13 @@ contract BinaryOptions {
     ));
   }
 
-  /** Owner needs to execute the round at the end of each interval */
+  /**
+    @dev Owner can execute the round at the end of each interval
+    @param timeStamp The round to execute, must be interval multiplus and in the past
+   */
   function executeRound(uint32 timeStamp) public {
     require(msg.sender == owner);
+    require(timeStamp <= now, "Can't execute a future round");
     require(timeStamp.mod(interval) == 0, "timeStamp must be multiple of interval");
     require(ethRounds[timeStamp].options.length > 0, "No data for current round");
     require(!ethRounds[timeStamp].executed, "Round already executed");
@@ -216,7 +254,10 @@ contract BinaryOptions {
     ethRounds[timeStamp].price = getEthPrice();
   }
 
-  /** Removes pending option, move to collected options */
+  /**
+    @dev Removes pending option and move it to collected options
+    @param index The pending option to remove
+   */
   function deletePending(uint32 index) internal {
     uint32[] storage pending = pendingEthOps[msg.sender];
     
@@ -228,7 +269,9 @@ contract BinaryOptions {
     pending.pop();
   }
 
-  /** Collect pending executed options */
+  /**
+    @dev Collect pending executed options
+   */
   function collect() public {
     uint32[] storage pending = pendingEthOps[msg.sender];
     uint256 amount;
