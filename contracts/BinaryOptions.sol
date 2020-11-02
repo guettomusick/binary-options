@@ -196,8 +196,7 @@ contract BinaryOptions {
     if (index < pending.length-1) {
       pending[index] = pending[pending.length-1];
     }
-    delete pending[pending.length-1];
-    pending.length--;
+    pending.pop();
   }
 
   function collect() public {

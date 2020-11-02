@@ -19,7 +19,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "deploy": "yarn build && surge ./build",
+    "deploy": "surge ./build --domain binary-options.surge.sh",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -8,7 +8,7 @@ import { ether } from '../constants';
 import { useToken, useAddress as useBinaryOptionsAddress } from './useBinaryOptions';
 import { setContract, setBalance, setAllowance } from '../redux/binToken';
 
-import BinToken from '../../contracts/BinToken.json';
+import BinToken from '../../artifacts/contracts/BinToken.sol/BinToken.json';
 
 export const useGetBalance = () => {
   const contract = useContract();
@@ -31,10 +31,13 @@ const useRegisterEvents = (contract) => {
 
   useEffect(() => {
     if (account && contract && getBalance && getAllowance) {
-      const options = {
-        filter: { from: account}
-      };
-      contract.events.Transfer(options)
+      contract.events.Transfer({ filter: { from: account} })
+        .on('data', (event) => {
+          console.log('Event Transfer', event);
+          getBalance();
+          getAllowance();
+        });
+      contract.events.Transfer({ filter: { to: account} })
         .on('data', (event) => {
           console.log('Event Transfer', event);
           getBalance();
@@ -105,8 +108,6 @@ export const useNeedAllowance = () => {
   const approve = useApprove();
   const allowance = useSelector(state => state.binToken.allowance);
   const getAllowance = useGetAllowance();
-
-  console.log(allowance);
 
   useEffect(() => {
     if (getAllowance) {
