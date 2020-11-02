@@ -34,44 +34,6 @@
         "AggregatorV3Interface"
       ]
     },
-    "/Volumes/Samsung_T5/Development/Crypto/binary-options/contracts/BinaryOptions.sol": {
-      "lastModificationDate": 1604325296328,
-      "sourceName": "contracts/BinaryOptions.sol",
-      "solcConfig": {
-        "version": "0.6.12",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./LinkTokenInterface.sol",
-        "./AggregatorV3Interface.sol",
-        "./BinToken.sol",
-        "@openzeppelin/contracts/math/SafeMath.sol"
-      ],
-      "versionPragmas": [
-        ">=0.5.16 <0.8.0"
-      ],
-      "artifacts": [
-        "BinaryOptions"
-      ]
-    },
     "/Volumes/Samsung_T5/Development/Crypto/binary-options/contracts/LinkTokenInterface.sol": {
       "lastModificationDate": 1604325069610,
       "sourceName": "contracts/LinkTokenInterface.sol",
@@ -557,6 +519,44 @@
       ],
       "artifacts": [
         "Migrations"
+      ]
+    },
+    "/Volumes/Samsung_T5/Development/Crypto/binary-options/contracts/BinaryOptions.sol": {
+      "lastModificationDate": 1604335072747,
+      "sourceName": "contracts/BinaryOptions.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./LinkTokenInterface.sol",
+        "./AggregatorV3Interface.sol",
+        "./BinToken.sol",
+        "@openzeppelin/contracts/math/SafeMath.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.16 <0.8.0"
+      ],
+      "artifacts": [
+        "BinaryOptions"
       ]
     }
   }

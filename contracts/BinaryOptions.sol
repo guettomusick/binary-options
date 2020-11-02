@@ -56,12 +56,12 @@ contract BinaryOptions {
   mapping(address => uint32[]) public collectedEthOps;
 
   //Kovan feeds: https://docs.chain.link/docs/reference-contracts
-  constructor() public {
+  constructor(address ethFeedAddress, address linkFeedAddress) public {
     token = new BinToken();
     //ETH/USD Kovan feed
-    ethFeed = AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+    ethFeed = AggregatorV3Interface(ethFeedAddress);
     //LINK/USD Kovan feed
-    linkFeed = AggregatorV3Interface(0x396c5E36DD0a0F5a5D33dae44368D4193f69a1F0);
+    linkFeed = AggregatorV3Interface(linkFeedAddress);
 
     owner = msg.sender;
   }
@@ -82,7 +82,7 @@ contract BinaryOptions {
     return uint256(price);
   }
 
-  //Returns the latest LINK price
+  //Returns the latest ETH price
   function getEthPrice() public view returns (uint256) {
     (
       uint80 roundID, 
@@ -106,22 +106,29 @@ contract BinaryOptions {
     return address(this).balance;
   }
 
+  /** Calculate price based on ETH balance and Token supply */
   function getPrice(uint256 amountTobuy) public view returns (uint256) {
     uint256 supply = token.totalSupply();
+    // need to substract Ether amount to buy as it's already present on wallet
+    // when called from buy method, otherwise use amountToBuy = 0
     uint256 collateral = address(this).balance.sub(amountTobuy);
 
+    // Initial price
     if(supply == 0 || collateral == 0) {
       return 0.0001 ether;
     }
 
-    
+    // return price in wei
     return collateral.mul(1 ether).div(supply);
   }
 
+
+  /** Convert ether to bin using current price */
   function ehterToBin(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(1 ether).div(price);
   }
 
+  /** Convert bin to ether using current price */
   function binToEther(uint256 amount, uint256 price) public pure returns(uint256) {
     return amount.mul(price).div(1 ether);
   }
@@ -130,39 +137,58 @@ contract BinaryOptions {
     return 80000;
   }
 
+  /** Buy tokens with ETH */
   function buy() payable public {
     uint256 amountTobuy = msg.value;
     require(amountTobuy > 0, "You need to send some Ether");
+
+    // get the current price for convertion
     uint256 price = getPrice(amountTobuy);
+    
+    // mint new tokens and transfer to wallet
     token.mint(msg.sender, ehterToBin(amountTobuy, price));
     emit Bought(amountTobuy);
   }
 
+  /** Sell tokens and convert to ETH */
   function sell(uint256 amount) public {
     require(amount > 0, "You need to sell at least some tokens");
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= amount, "Check the token allowance");
+
+    // get the current price for convertion
     uint256 price = getPrice(0);
+
+    // burn tokens form wallet
     token.burnFrom(msg.sender, amount);
+
+    // transfer ETH from contract
     msg.sender.transfer(binToEther(amount, price));
     emit Sold(amount);
   }
 
+  /** Place new binaru option */
   function place(uint32 timeStamp, uint256 amount, bool higher) public {
     require(amount > 0, "You need to send some BIN");
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= amount, "Check the token allowance");
+    require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
+    // Get next round timestamp
     uint256 nextRound = now.sub(now.mod(interval)).add(interval);
     require(timeStamp > nextRound, "You can't bet for next round");
-    require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
+    
+    // Collect Tokens on internal wallet
     token.transferFrom(msg.sender, address(this), amount);
 
     Round storage round = ethRounds[timeStamp];
+    // Keep track of total higher and lower bets for future reference
     if (higher) {
       round.higherAmount.add(amount);
     } else {
       round.lowerAmount.add(amount);
     }
+
+    // Save option and index of option on round and pending
     uint32 index = uint32(ethOpts.length);
     round.options.push(index);
     pendingEthOps[msg.sender].push(index);
@@ -178,16 +204,19 @@ contract BinaryOptions {
     ));
   }
 
+  /** Owner needs to execute the round at the end of each interval */
   function executeRound(uint32 timeStamp) public {
     require(msg.sender == owner);
     require(timeStamp.mod(interval) == 0, "timeStamp must be multiple of interval");
     require(ethRounds[timeStamp].options.length > 0, "No data for current round");
     require(!ethRounds[timeStamp].executed, "Round already executed");
 
+    // Marks round as executed and set price feed
     ethRounds[timeStamp].executed = true;
     ethRounds[timeStamp].price = getEthPrice();
   }
 
+  /** Removes pending option, move to collected options */
   function deletePending(uint32 index) internal {
     uint32[] storage pending = pendingEthOps[msg.sender];
     
@@ -199,6 +228,7 @@ contract BinaryOptions {
     pending.pop();
   }
 
+  /** Collect pending executed options */
   function collect() public {
     uint32[] storage pending = pendingEthOps[msg.sender];
     uint256 amount;
@@ -210,19 +240,21 @@ contract BinaryOptions {
         // Inavlid bet, consider it a loose
         deletePending(i);
 
-        // No need to increment, we need to process moved last element
+        // After deleting, No need to increment, we need to process moved last element
       } else if (round.executed) {
+        // Round executed, can process option
         bool winner = option.higher ? round.price > option.price : round.price < option.price;
         if (winner) {
+          // add amount to total transaction
           amount += option.amount.mul(100000+option.payout).div(1000);
           option.winner = true;
         }
 
         deletePending(i);
 
-        // No need to increment, we need to process moved last element
+        // After deleting, No need to increment, we need to process moved last element
       } else {
-        // increment position if not ready to collect
+        // Not executed yet, leave on pending and check next one
         i++;
       }
     }
@@ -230,9 +262,11 @@ contract BinaryOptions {
     require(amount > 0, "Nothing to collect");
     uint256 balance = token.balanceOf(address(this));
     if (balance < amount) {
+      // Not enough balance, we mint new tokens to pay the bets
       uint256 mintAmount = amount.sub(balance);
       token.mint(address(this), mintAmount);
     }
+    // Send the total amount to the winner
     token.transfer(msg.sender, amount);
   }
 }
