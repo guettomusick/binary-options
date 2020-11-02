@@ -33,6 +33,7 @@
     "ethers": "^5.0.0",
     "hardhat": "^2.0.2",
     "ts-node": "^9.0.0",
-    "typescript": "^4.0.5"
+    "typescript": "^4.0.5",
+    "leche": "^2.3.0"
   }
 }
