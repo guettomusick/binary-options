@@ -2,6 +2,8 @@ import '@nomiclabs/hardhat-waffle';
 import { task } from 'hardhat/config';
 import * as fs from 'fs';
 
+const mnemonic = fs.readFileSync('.secret').toString().trim();
+
 task('accounts', 'Prints the list of accounts', async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
 
@@ -10,7 +12,11 @@ task('accounts', 'Prints the list of accounts', async (args, hre) => {
   }
 });
 
-const mnemonic = fs.readFileSync('.secret').toString().trim();
+task('signer', 'Prints the owner and contract creator', async (args, hre) => {
+  const wallet = await hre.ethers.Wallet.fromMnemonic(mnemonic);
+
+  console.log(wallet.address);
+});
 
 module.exports = {
   defaultNetwork: 'hardhat',

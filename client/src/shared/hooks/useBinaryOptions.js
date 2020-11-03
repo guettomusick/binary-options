@@ -6,7 +6,7 @@ import { useAddContract } from './useAddContract';
 import { setContract, setToken, setPrice } from '../redux/binaryOptions';
 
 import BinaryOptions from '../../artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
-import networks from '../../artifacts/contracts/BinaryOptions.sol/networks.json';
+import networks from '../../config/networks.json';
 
 export const useGetPrice = () => {
   const contract = useContract();
@@ -37,7 +37,7 @@ export const useInitializeContract = () => {
   const contract = useSelector(state => state.binaryOptions.contract);
   useRegisterEvents(contract);
 
-  BinaryOptions.networks = networks;
+  BinaryOptions.networks = networks.BinaryOptions;
 
   return useAddContract(
     contract,

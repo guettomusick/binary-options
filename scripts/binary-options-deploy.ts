@@ -1,7 +1,7 @@
 import { run, ethers, network } from 'hardhat';
 import * as fs from 'fs';
 
-const networksPath = './client/src/artifacts/contracts/BinaryOptions.sol/networks.json';
+const networksPath = './client/src/config/networks.json';
 const networks = fs.existsSync(networksPath) ? JSON.parse(fs.readFileSync(networksPath).toString() || '{}') : {};
 
 const priceFeeds = {
@@ -35,7 +35,10 @@ async function main() {
 
   await binaryOptions.deployed();
 
-  networks[network.config.chainId] = { address: binaryOptions.address };
+  if (!networks.BinaryOptions) {
+    networks.BinaryOptions = {};
+  }
+  networks.BinaryOptions[network.config.chainId] = { address: binaryOptions.address };
   fs.writeFileSync(networksPath, JSON.stringify(networks));
   console.log('BinaryOptions deployed to:', binaryOptions.address);
 }
