@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { FC } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div`
   margin: 20px 0;
 `;
 
-const NesContainer = ({ children, className }) => (
+type Props = {
+  className?: string,
+}
+
+const NesContainer: FC<Props> = ({ children, className = '' }) => (
   <Container className={`nes-container ${className}`}>
     { children }
   </Container>

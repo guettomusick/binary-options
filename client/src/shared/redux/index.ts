@@ -4,6 +4,12 @@ import wallet from './wallet';
 import binToken from './binToken';
 import binaryOptions from './binaryOptions';
 
+declare global {
+  interface Window {
+    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
+  }
+}
+
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
 const rootReducer = combineReducers({
@@ -17,4 +23,5 @@ const store = createStore(
   composeEnhancers(),
 );
 
+export type AppState = ReturnType<typeof rootReducer>;
 export default store;
