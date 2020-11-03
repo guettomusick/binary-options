@@ -1,10 +1,9 @@
 import { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import BigNumber from 'bignumber.js';
+import ethers from 'ethers';
 
-import { useAccount } from './useWeb3';
+import { useSigner } from './useWallet';
 import { useAddContract } from './useAddContract';
-import { ether } from '../constants';
 import { useToken, useAddress as useBinaryOptionsAddress } from './useBinaryOptions';
 import { setContract, setBalance, setAllowance } from '../redux/binToken';
 
@@ -13,39 +12,44 @@ import BinToken from '../../artifacts/contracts/BinToken.sol/BinToken.json';
 export const useGetBalance = () => {
   const contract = useContract();
   const dispatch = useDispatch();
-  const account = useAccount();
+  const signer = useSigner();
   
-  const getBalance = useCallback(() => {
-    contract.methods.balanceOf(account).call()
-      .then((balance) => dispatch(setBalance(new BigNumber(balance || 0).dividedBy(ether).toNumber())))
+  const getBalance = useCallback(async () => {
+    const address = await signer.getAddress();
+    contract.balanceOf(address)
+      .then((balance) => dispatch(setBalance(ethers.utils.formatUnits(balance, 18))))
       .catch(console.error);
-  }, [dispatch, contract, account]);
+  }, [dispatch, contract, signer]);
 
-  return contract && account ? getBalance : false;
+  return contract ? getBalance : false;
 };
 
 const useRegisterEvents = (contract) => {
-  const account = useAccount();
+  const signer = useSigner();
   const getBalance = useGetBalance();
   const getAllowance = useGetAllowance();
 
   useEffect(() => {
-    if (account && contract && getBalance && getAllowance) {
-      contract.events.Transfer({ filter: { from: account} })
-        .on('data', (event) => {
-          console.log('Event Transfer', event);
+    if (contract && getBalance && getAllowance) {
+      (async () => {
+        const address = await signer.getAddress();
+        const filterFrom = contract.filters.Transfer(address, null);
+        const filterTo = contract.filters.Transfer(null, address);
+
+        contract.on(filterFrom, (event) => {
+          console.log('Event Transfer fron', event);
           getBalance();
           getAllowance();
         });
-      contract.events.Transfer({ filter: { to: account} })
-        .on('data', (event) => {
-          console.log('Event Transfer', event);
+        contract.on(filterTo, (event) => {
+          console.log('Event Transfer to', event);
           getBalance();
           getAllowance();
         });
-      getBalance();
+        getBalance();
+      })();
     }
-  }, [account, contract, getBalance, getAllowance]);
+  }, [contract, signer, getBalance, getAllowance]);
 };
 
 export const useInitializeContract = () => {
@@ -73,16 +77,15 @@ export const useApprove = () => {
   const address = useBinaryOptionsAddress();
   
   return useCallback(
-    (amount) => {
+    async (amount) => {
       if (contract && address && getAllowance) {
-        contract.methods.approve(address, amount).send()
-          .on('transactionHash', (hash) => console.log('approve transactionHash', hash))
-          .on('confirmation', (confirmationNumber, receipt) => {
-            getAllowance();
-            console.log('approve confirmation', confirmationNumber, receipt)
-          })
-          .on('receipt', (receipt) => console.log('approve receipt', receipt))
-          .on('error', (error) => console.error('approve error', error));
+        try {
+          const tx = await contract.approve(address, amount);
+          const receipt = tx.wait().then(getAllowance);
+          return { tx, receipt };
+        } catch(error) {
+          console.error(error);
+        }
       }
     },
     [contract, address, getAllowance],
@@ -92,16 +95,17 @@ export const useApprove = () => {
 export const useGetAllowance = () => {
   const contract = useContract();
   const dispatch = useDispatch();
-  const account = useAccount();
   const address = useBinaryOptionsAddress();
+  const signer = useSigner();
   
-  const getAllowance = useCallback(() => {
-    contract.methods.allowance(account, address).call()
-      .then((allowance) => dispatch(setAllowance(new BigNumber(allowance || 0).dividedBy(ether).toNumber())))
+  const getAllowance = useCallback(async () => {
+    const account = await signer.getAddress();
+    contract.allowance(account, address)
+      .then((allowance) => dispatch(setAllowance(ethers.utils.formatUnits(allowance, 18))))
       .catch(console.error);
-  }, [dispatch, contract, account, address]);
+  }, [dispatch, contract, signer, address]);
 
-  return contract && account && address ? getAllowance : false;
+  return contract && address ? getAllowance : false;
 };
 
 export const useNeedAllowance = () => {
@@ -116,8 +120,8 @@ export const useNeedAllowance = () => {
   }, [getAllowance]);
 
   const needAllowance = useCallback((amount) => {
-    if (allowance < amount) {
-      approve(ether.multipliedBy(1000).toFixed());
+    if (allowance < +amount) {
+      approve(ethers.constants.MaxUint256);
       return false;
     }
     return true;
@@ -130,7 +134,7 @@ export const useNeedBalance = () => {
   const balance = useBalance();
 
   const needBalance = useCallback(
-    (amount) => balance >= amount,
+    (amount) => balance >= +amount,
     [balance],
   );
 

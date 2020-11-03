@@ -1,32 +1,28 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { ethers } from 'ethers';
 
-import { useWeb3, useAccount } from './useWeb3';
+import { useProvider, useSigner } from './useWallet';
 
 export const useAddContract = (contract, action, contractInterface, address) => {
-  const web3 = useWeb3();
-  const account = useAccount();
+  const provider = useProvider();
+  const signer = useSigner();
   const dispatch = useDispatch();
 
   useEffect( () => {
-    if ( web3 && account && !contract) {
-      web3.eth.net.getId()
-        .then(networkId => {
-          const networks = contractInterface.networks;
-          const contractAddress = address || (networks && networks[networkId] && networks[networkId].address);
-
-          if (contractAddress) {
-            const instance = new web3.eth.Contract(
-              contractInterface.abi,
-              contractAddress,
-              { from: account }
-            );
-            dispatch(action(instance));
-          }
-        } )
-        .catch(console.error);
+    if ( provider && !contract) {
+      (async () => {
+        const { chainId } = await provider.getNetwork();
+        const networks = contractInterface.networks;
+        const contractAddress = address || (networks && networks[chainId] && networks[chainId].address);
+        if (contractAddress) {
+          const contractInstance = new ethers.Contract(contractAddress, contractInterface.abi, provider);
+          const contractInstanceWithSigner = contractInstance.connect(signer);
+          dispatch(action(contractInstanceWithSigner));
+        }
+      })();
     }
-  }, [dispatch, web3, account, contract, action, address, contractInterface.abi, contractInterface.networks] );
+  }, [dispatch, provider, contract, action, address, signer, contractInterface.abi, contractInterface.networks] );
 
   return contract;
 };

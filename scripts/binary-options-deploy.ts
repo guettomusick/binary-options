@@ -1,8 +1,8 @@
-const hre = require('hardhat');
-const fs = require('fs');
+import { run, ethers, network } from 'hardhat';
+import * as fs from 'fs';
 
 const networksPath = './client/src/artifacts/contracts/BinaryOptions.sol/networks.json';
-const networks = fs.existsSync(networksPath) ? JSON.parse(fs.readFileSync(networksPath) || '{}') : {};
+const networks = fs.existsSync(networksPath) ? JSON.parse(fs.readFileSync(networksPath).toString() || '{}') : {};
 
 const priceFeeds = {
   1: {
@@ -25,17 +25,17 @@ const priceFeeds = {
 };
 
 async function main() {
-  await hre.run('compile');
+  await run('compile');
 
-  const priceFeed = priceFeeds[hre.network.config.chainId] || priceFeeds.default;
+  const priceFeed = priceFeeds[network.config.chainId] || priceFeeds.default;
 
   // We get the contract to deploy
-  const BinaryOptions = await hre.ethers.getContractFactory('BinaryOptions');
+  const BinaryOptions = await ethers.getContractFactory('BinaryOptions');
   const binaryOptions = await BinaryOptions.deploy(priceFeed.eth, priceFeed.link);
 
   await binaryOptions.deployed();
 
-  networks[hre.network.config.chainId] = { address: binaryOptions.address };
+  networks[network.config.chainId] = { address: binaryOptions.address };
   fs.writeFileSync(networksPath, JSON.stringify(networks));
   console.log('BinaryOptions deployed to:', binaryOptions.address);
 }

@@ -1,9 +1,14 @@
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
+import '@nomiclabs/hardhat-waffle';
+import { task } from 'hardhat/config';
+import * as fs from 'fs';
 
-require('@nomiclabs/hardhat-ethers');
-const fs = require('fs');
+task('accounts', 'Prints the list of accounts', async (args, hre) => {
+  const accounts = await hre.ethers.getSigners();
+
+  for (const account of accounts) {
+    console.log(account.address);
+  }
+});
 
 const mnemonic = fs.readFileSync('.secret').toString().trim();
 
