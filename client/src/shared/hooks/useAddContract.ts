@@ -1,16 +1,30 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { ethers } from 'ethers';
+import { ethers, Contract } from 'ethers';
 
 import { useProvider, useSigner } from './useWallet';
+import { Action } from '../redux/types';
 
-export const useAddContract = (contract, action, contractInterface, address) => {
+export type ContractInterface = {
+  abi: any,
+  networks?: {
+    [key: number]: {
+      address: string,
+    },
+  },
+}
+
+export const useAddContract = (
+  contract: Contract | undefined,
+  action: (contract: Contract) => Action<Contract>,
+  contractInterface: ContractInterface,
+  address?: string) => {
   const provider = useProvider();
   const signer = useSigner();
   const dispatch = useDispatch();
 
   useEffect( () => {
-    if ( provider && !contract) {
+    if ( provider && signer && !contract) {
       (async () => {
         const { chainId } = await provider.getNetwork();
         const networks = contractInterface.networks;

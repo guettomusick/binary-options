@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { FC } from 'react';
 import styled, { css } from 'styled-components';
 import classnames from 'classnames';
 
-const NesInputContainer = styled.div`
+type StyledProps = {
+  dark: boolean,
+};
+
+type Props = {
+  id: string,
+  name?: string,
+  dark?: boolean,
+  inline?: boolean,
+  type?: string,
+  placeholder?: string,
+  value?: string | number,
+  validation?: 'success' | 'warning' | 'error',
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void,
+  min?: string | number,
+};
+
+const NesInputContainer = styled.div<StyledProps>`
   flex-grow: 1;
   margin: 0;
 
@@ -29,7 +46,7 @@ const NesInputContainer = styled.div`
   `}
 `;
 
-const NesInput = ({
+const NesInput: FC<Props> = ({
   id,
   name,
   dark = false,
@@ -42,8 +59,8 @@ const NesInput = ({
   onChange,
   min,
 }) => {
-  const handleKeyPress = (event) => {
-    if (min >= 0 && event.charCode === 45) {
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (min && min >= 0 && event.charCode === 45) {
       event.preventDefault()
       return false;
     }

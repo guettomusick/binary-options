@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { FC } from 'react';
 import classnames from 'classnames';
 
-const Button = ({
-  href = false,
+type Props = {
+  kind?: string,
+  type?: 'button' | 'submit' | 'reset',
+  disabled?: boolean,
+  href?: string,
+  onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+};
+
+const Button: FC<Props> = ({
+  href,
   type = 'button',
   disabled = false,
   kind,
