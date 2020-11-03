@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "truffle test",
-    "compile": "truffle compile",
-    "migrate": "truffle migrate",
-    "migrate-reset": "truffle migrate --reset"
+    "start": "hardhat node",
+    "accounts": "hardhat accounts",
+    "signer": "hardhat signer",
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/binary-options-deploy.ts"
   },
   "repository": {
     "type": "git",
@@ -20,11 +22,20 @@
   },
   "homepage": "https://github.com/guettomusick/binary-options#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^2.4.0",
-    "@truffle/hdwallet-provider": "^1.1.1",
-    "bignumber.js": "^9.0.1",
-    "ethereum-waffle": "^3.1.2",
-    "leche": "^2.3.0",
-    "truffle": "^5.1.50"
+    "@openzeppelin/contracts": "^3.2.0"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.0",
+    "@nomiclabs/hardhat-truffle5": "^2.0.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.0",
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.14.6",
+    "chai": "^4.2.0",
+    "ethereum-waffle": "^3.2.0",
+    "ethers": "^5.0.0",
+    "hardhat": "^2.0.2",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
   }
 }

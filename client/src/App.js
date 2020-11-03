@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { useWeb3, useAccounts } from './shared/hooks/useWeb3';
+import { useInitializeWallet } from './shared/hooks/useWallet';
 import { useInitializeContract as useBinaryOptionsContract } from './shared/hooks/useBinaryOptions';
 import { useInitializeContract as useBinTokenContract } from './shared/hooks/useBinToken';
 
@@ -19,16 +19,12 @@ const Container = styled.div`
 const loading = (text) => <Loading>{ text }</Loading>;
 
 const App = () => {
-  const web3 = useWeb3();
-  const accounts = useAccounts();
+  const initialized = useInitializeWallet();
   const binaryOptionsContract = useBinaryOptionsContract();
   const binTokenContract = useBinTokenContract();
 
-  if (!web3) {
-    return loading('Loading Web3...');
-  }
-  if (accounts.length === 0) {
-    return loading('Loading Accounts...');
+  if (!initialized) {
+    return loading('Loading Ethers...');
   }
   if (!binaryOptionsContract || !binTokenContract) {
     return loading('Loading Contracts...');
