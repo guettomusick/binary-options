@@ -21,9 +21,6 @@ contract BinaryOptions {
   uint256 ethPrice;
   uint256 linkPrice;
 
-  //Precomputing hash of strings
-  bytes32 ethHash = keccak256(abi.encodePacked('ETH'));
-
   BinToken public token;
 
   event Bought(uint256 amount);
