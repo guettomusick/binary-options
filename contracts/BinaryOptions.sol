@@ -181,6 +181,8 @@ contract BinaryOptions {
     require(amount > 0, "You need to sell at least some tokens");
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= amount, "Check the token allowance");
+    uint256 balance = token.balanceOf(msg.sender);
+    require(balance >= amount, "Not enough balance");
 
     // get the current price for convertion
     uint256 price = getPrice(0);

@@ -1,5 +1,5 @@
 import '@nomiclabs/hardhat-waffle';
-import { task } from 'hardhat/config';
+import { task, HardhatUserConfig } from 'hardhat/config';
 import * as fs from 'fs';
 
 const mnemonic = fs.readFileSync('.secret').toString().trim();
@@ -18,7 +18,7 @@ task('signer', 'Prints the owner and contract creator', async (args, hre) => {
   console.log(wallet.address);
 });
 
-module.exports = {
+const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
@@ -59,3 +59,5 @@ module.exports = {
     artifacts: './client/src/artifacts',
   },
 };
+
+export default config;
