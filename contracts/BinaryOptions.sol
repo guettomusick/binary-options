@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.16 <0.8.0;
+pragma solidity >=0.6.0 <0.8.0;
 
 import './LinkTokenInterface.sol';
 import './AggregatorV3Interface.sol';
@@ -63,6 +63,34 @@ contract BinaryOptions {
    */ 
   function getOptionsLength() public view returns (uint256) {
     return options.length;
+  }
+
+  /**
+    @dev Returns the total number of pending options
+   */ 
+  function getPendingOptionsLength(address wallet) public view returns (uint256) {
+    return pendingOptions[wallet].length;
+  }
+
+  /**
+    @dev Returns the total number of collected options
+   */ 
+  function getCollectedOptionsLength(address wallet) public view returns (uint256) {
+    return collectedOptions[wallet].length;
+  }
+
+  /**
+    @dev Returns the total number of options at round
+   */ 
+  function getOptionsAtRoundLength(uint32 timeStamp) public view returns (uint256) {
+    return rounds[timeStamp].options.length;
+  }
+
+  /**
+    @dev Returns the of option at round
+   */ 
+  function getOptionIndexAtRound(uint32 timeStamp, uint256 index) public view returns (uint256) {
+    return rounds[timeStamp].options[index];
   }
 
   /**
@@ -272,7 +300,7 @@ contract BinaryOptions {
         bool winner = option.higher ? round.price > option.price : round.price < option.price;
         if (winner) {
           // add amount to total transaction
-          amount += option.amount.mul(100000+option.payout).div(1000);
+          amount += option.amount.mul(100000+option.payout).div(100000);
           option.winner = true;
         }
 
@@ -285,14 +313,15 @@ contract BinaryOptions {
       }
     }
 
-    require(amount > 0, "Nothing to collect");
-    uint256 balance = token.balanceOf(address(this));
-    if (balance < amount) {
-      // Not enough balance, we mint new tokens to pay the bets
-      uint256 mintAmount = amount.sub(balance);
-      token.mint(address(this), mintAmount);
+    if (amount > 0) {
+      uint256 balance = token.balanceOf(address(this));
+      if (balance < amount) {
+        // Not enough balance, we mint new tokens to pay the bets
+        uint256 mintAmount = amount.sub(balance);
+        token.mint(address(this), mintAmount);
+      }
+      // Send the total amount to the winner
+      token.transfer(msg.sender, amount);
     }
-    // Send the total amount to the winner
-    token.transfer(msg.sender, amount);
   }
 }
