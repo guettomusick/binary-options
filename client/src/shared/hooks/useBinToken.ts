@@ -18,7 +18,7 @@ export const useGetBalance = () => {
     if (contract && signer) {
       const address = await signer.getAddress();
       contract.balanceOf(address)
-        .then((balance: BigNumberish) => dispatch(setBalance(+ethers.utils.formatUnits(balance, 18))))
+        .then((balance: BigNumberish) => dispatch(setBalance(+ethers.utils.formatEther(balance))))
         .catch(console.error);
     }
   }, [dispatch, contract, signer]);
@@ -104,7 +104,7 @@ export const useGetAllowance = () => {
     if (contract && signer) {
       const account = await signer.getAddress();
       contract.allowance(account, address)
-        .then((allowance: BigNumberish) => dispatch(setAllowance(+ethers.utils.formatUnits(allowance, 18))))
+        .then((allowance: BigNumberish) => dispatch(setAllowance(+ethers.utils.formatEther(allowance))))
         .catch(console.error);
     }
   }, [dispatch, contract, signer, address]);

@@ -15,7 +15,7 @@ export const useGetPrice = () => {
   const getPrice = useCallback(() => {
     if (contract) {
       contract.getPrice(0)
-        .then((price: BigNumberish) => dispatch(setPrice(+ethers.utils.formatUnits(price || 0, 18))))
+        .then((price: BigNumberish) => dispatch(setPrice(+ethers.utils.formatEther(price || 0))))
         .catch(console.error);
     }
   }, [dispatch, contract]);
@@ -91,7 +91,7 @@ export const useBuy = () => {
     async (amount) => {
       if (contract) {
         try {
-          const tx = await contract.buy({ value: ethers.utils.parseUnits(amount, 18) })
+          const tx = await contract.buy({ value: ethers.utils.parseEther(amount) })
           const receipt = tx.wait();
           return { tx, receipt };
         } catch(error) {
@@ -112,7 +112,7 @@ export const useSell = () => {
     async (amount) => {
       if (contract) {
         try {
-          const tx = await contract.sell(ethers.utils.parseUnits(amount, 18));
+          const tx = await contract.sell(ethers.utils.parseEther(amount));
           const receipt = tx.wait();
           return { tx, receipt };
         } catch(error) {
