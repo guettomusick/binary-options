@@ -1,27 +1,29 @@
 import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import ethers from 'ethers';
+import { ethers, BigNumberish, Contract } from 'ethers';
 
 import { useAddContract } from './useAddContract';
 import { setContract, setToken, setPrice } from '../redux/binaryOptions';
 
 import BinaryOptions from '../../artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
-import networks from '../../config/networks.json';
+import Networks from '../../config/networks.json';
 
 export const useGetPrice = () => {
   const contract = useContract();
   const dispatch = useDispatch();
   
   const getPrice = useCallback(() => {
-    contract.getPrice(0)
-      .then((price) => dispatch(setPrice(ethers.utils.formatUnits(price || 0, 18))))
-      .catch(console.error);
+    if (contract) {
+      contract.getPrice(0)
+        .then((price: BigNumberish) => dispatch(setPrice(+ethers.utils.formatEther(price || 0))))
+        .catch(console.error);
+    }
   }, [dispatch, contract]);
 
   return contract ? getPrice : false;
 };
 
-const useRegisterEvents = (contract) => {
+const useRegisterEvents = (contract: Contract | undefined) => {
   const getPrice = useGetPrice();
 
   useEffect(() => {
@@ -37,12 +39,12 @@ export const useInitializeContract = () => {
   const contract = useSelector(state => state.binaryOptions.contract);
   useRegisterEvents(contract);
 
-  BinaryOptions.networks = networks.BinaryOptions;
+  const networks = Networks.BinaryOptions;
 
   return useAddContract(
     contract,
     setContract,
-    BinaryOptions,
+    { ...BinaryOptions, networks },
   );
 }
 
@@ -56,7 +58,7 @@ export const useToken = () => {
   useEffect(() => {
     if (!token && contract) {
       contract.token()
-        .then(token => dispatch(setToken(token)))
+        .then((token: string) => dispatch(setToken(token)))
         .catch(console.error);
     }
   }, [dispatch, contract, token]);
@@ -87,12 +89,14 @@ export const useBuy = () => {
 
   const buy = useCallback( 
     async (amount) => {
-      try {
-        const tx = await contract.buy({ value: ethers.utils.parseUnits(amount, 18) })
-        const receipt = tx.wait();
-        return { tx, receipt };
-      } catch(error) {
-        console.error(error);
+      if (contract) {
+        try {
+          const tx = await contract.buy({ value: ethers.utils.parseEther(amount) })
+          const receipt = tx.wait();
+          return { tx, receipt };
+        } catch(error) {
+          console.error(error);
+        }
       }
     },
     [contract],
@@ -106,12 +110,14 @@ export const useSell = () => {
 
   const sell = useCallback(
     async (amount) => {
-      try {
-        const tx = await contract.sell(ethers.utils.parseUnits(amount, 18));
-        const receipt = tx.wait();
-        return { tx, receipt };
-      } catch(error) {
-        console.error(error);
+      if (contract) {
+        try {
+          const tx = await contract.sell(ethers.utils.parseEther(amount));
+          const receipt = tx.wait();
+          return { tx, receipt };
+        } catch(error) {
+          console.error(error);
+        }
       }
     },
     [contract],

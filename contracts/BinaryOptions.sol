@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.16 <0.8.0;
+pragma solidity >=0.6.0 <0.8.0;
 
 import './LinkTokenInterface.sol';
 import './AggregatorV3Interface.sol';
@@ -17,9 +17,7 @@ contract BinaryOptions {
   
   //Pricefeed interfaces
   AggregatorV3Interface internal ethFeed;
-  AggregatorV3Interface internal linkFeed;
   uint256 ethPrice;
-  uint256 linkPrice;
 
   BinToken public token;
 
@@ -46,39 +44,53 @@ contract BinaryOptions {
     bool winner;
   }
 
-  Option[] public ethOpts;
-  Option[] public linkOpts;
-  mapping(uint32 => Round) public ethRounds;
-  mapping(address => uint32[]) public pendingEthOps;
-  mapping(address => uint32[]) public collectedEthOps;
+  Option[] public options;
+  mapping(uint32 => Round) public rounds;
+  mapping(address => uint32[]) public pendingOptions;
+  mapping(address => uint32[]) public collectedOptions;
 
   //Kovan feeds: https://docs.chain.link/docs/reference-contracts
-  constructor(address ethFeedAddress, address linkFeedAddress) public {
+  constructor(address ethFeedAddress) public {
     token = new BinToken();
     //ETH/USD Kovan feed
     ethFeed = AggregatorV3Interface(ethFeedAddress);
-    //LINK/USD Kovan feed
-    linkFeed = AggregatorV3Interface(linkFeedAddress);
 
     owner = msg.sender;
   }
 
   /**
-    @dev Returns the latest LINK price
+    @dev Returns the total number of options
    */ 
-  function getLinkPrice() public view returns (uint256) {
-    (
-      uint80 roundID, 
-      int price,
-      uint256 startedAt,
-      uint256 timeStamp,
-      uint80 answeredInRound
-    ) = linkFeed.latestRoundData();
-    // If the round is not complete yet, timeStamp is 0
-    require(timeStamp > 0, 'Round not complete');
-    //Price should never be negative thus cast int to unit is ok
-    //Price is 8 decimal places and will require 1e10 correction later to 18 places
-    return uint256(price);
+  function getOptionsLength() public view returns (uint256) {
+    return options.length;
+  }
+
+  /**
+    @dev Returns the total number of pending options
+   */ 
+  function getPendingOptionsLength(address wallet) public view returns (uint256) {
+    return pendingOptions[wallet].length;
+  }
+
+  /**
+    @dev Returns the total number of collected options
+   */ 
+  function getCollectedOptionsLength(address wallet) public view returns (uint256) {
+    return collectedOptions[wallet].length;
+  }
+
+  /**
+    @dev Returns the total number of options at round
+   */ 
+  function getOptionsAtRoundLength(uint32 timeStamp) public view returns (uint256) {
+    return rounds[timeStamp].options.length;
+  }
+
+  /**
+    @dev Returns the of option at round
+   */ 
+  function getOptionIndexAtRound(uint32 timeStamp, uint256 index) public view returns (uint256) {
+    return rounds[timeStamp].options[index];
   }
 
   /**
@@ -181,6 +193,8 @@ contract BinaryOptions {
     require(amount > 0, "You need to sell at least some tokens");
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= amount, "Check the token allowance");
+    uint256 balance = token.balanceOf(msg.sender);
+    require(balance >= amount, "Not enough balance");
 
     // get the current price for convertion
     uint256 price = getPrice(0);
@@ -211,19 +225,19 @@ contract BinaryOptions {
     // Collect Tokens on internal wallet
     token.transferFrom(msg.sender, address(this), amount);
 
-    Round storage round = ethRounds[timeStamp];
+    Round storage round = rounds[timeStamp];
     // Keep track of total higher and lower bets for future reference
     if (higher) {
-      round.higherAmount.add(amount);
+      round.higherAmount += amount;
     } else {
-      round.lowerAmount.add(amount);
+      round.lowerAmount += amount;
     }
 
     // Save option and index of option on round and pending
-    uint32 index = uint32(ethOpts.length);
+    uint32 index = uint32(options.length);
     round.options.push(index);
-    pendingEthOps[msg.sender].push(index);
-    ethOpts.push(Option(
+    pendingOptions[msg.sender].push(index);
+    options.push(Option(
       getEthPrice(),
       higher,
       timeStamp,
@@ -240,15 +254,15 @@ contract BinaryOptions {
     @param timeStamp The round to execute, must be interval multiplus and in the past
    */
   function executeRound(uint32 timeStamp) public {
-    require(msg.sender == owner);
+    require(msg.sender == owner, "Only owner can execute round");
     require(timeStamp <= now, "Can't execute a future round");
-    require(timeStamp.mod(interval) == 0, "timeStamp must be multiple of interval");
-    require(ethRounds[timeStamp].options.length > 0, "No data for current round");
-    require(!ethRounds[timeStamp].executed, "Round already executed");
+    require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
+    require(rounds[timeStamp].options.length > 0, "No data for current round");
+    require(!rounds[timeStamp].executed, "Round already executed");
 
     // Marks round as executed and set price feed
-    ethRounds[timeStamp].executed = true;
-    ethRounds[timeStamp].price = getEthPrice();
+    rounds[timeStamp].executed = true;
+    rounds[timeStamp].price = getEthPrice();
   }
 
   /**
@@ -256,9 +270,9 @@ contract BinaryOptions {
     @param index The pending option to remove
    */
   function deletePending(uint32 index) internal {
-    uint32[] storage pending = pendingEthOps[msg.sender];
+    uint32[] storage pending = pendingOptions[msg.sender];
     
-    collectedEthOps[msg.sender].push(pending[index]);
+    collectedOptions[msg.sender].push(pending[index]);
     // remove element from array
     if (index < pending.length-1) {
       pending[index] = pending[pending.length-1];
@@ -270,12 +284,12 @@ contract BinaryOptions {
     @dev Collect pending executed options
    */
   function collect() public {
-    uint32[] storage pending = pendingEthOps[msg.sender];
+    uint32[] storage pending = pendingOptions[msg.sender];
     uint256 amount;
 
     for (uint32 i=0; i<pending.length;) {
-      Option storage option = ethOpts[pending[i]];
-      Round storage round = ethRounds[option.execute];
+      Option storage option = options[pending[i]];
+      Round storage round = rounds[option.execute];
       if (round.options.length == 0) {
         // Inavlid bet, consider it a loose
         deletePending(i);
@@ -286,7 +300,7 @@ contract BinaryOptions {
         bool winner = option.higher ? round.price > option.price : round.price < option.price;
         if (winner) {
           // add amount to total transaction
-          amount += option.amount.mul(100000+option.payout).div(1000);
+          amount += option.amount.mul(100000+option.payout).div(100000);
           option.winner = true;
         }
 
@@ -299,14 +313,15 @@ contract BinaryOptions {
       }
     }
 
-    require(amount > 0, "Nothing to collect");
-    uint256 balance = token.balanceOf(address(this));
-    if (balance < amount) {
-      // Not enough balance, we mint new tokens to pay the bets
-      uint256 mintAmount = amount.sub(balance);
-      token.mint(address(this), mintAmount);
+    if (amount > 0) {
+      uint256 balance = token.balanceOf(address(this));
+      if (balance < amount) {
+        // Not enough balance, we mint new tokens to pay the bets
+        uint256 mintAmount = amount.sub(balance);
+        token.mint(address(this), mintAmount);
+      }
+      // Send the total amount to the winner
+      token.transfer(msg.sender, amount);
     }
-    // Send the total amount to the winner
-    token.transfer(msg.sender, amount);
   }
 }

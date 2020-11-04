@@ -16,7 +16,7 @@ const Container = styled.div`
   padding: 50px;
 `;
 
-const loading = (text) => <Loading>{ text }</Loading>;
+const loading = (text: string) => <Loading>{ text }</Loading>;
 
 const App = () => {
   const initialized = useInitializeWallet();

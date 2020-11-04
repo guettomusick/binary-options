@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import ethers from 'ethers';
+import { ethers, BigNumberish, Contract } from 'ethers';
 
 import { useSigner } from './useWallet';
 import { useAddContract } from './useAddContract';
@@ -15,22 +15,24 @@ export const useGetBalance = () => {
   const signer = useSigner();
   
   const getBalance = useCallback(async () => {
-    const address = await signer.getAddress();
-    contract.balanceOf(address)
-      .then((balance) => dispatch(setBalance(ethers.utils.formatUnits(balance, 18))))
-      .catch(console.error);
+    if (contract && signer) {
+      const address = await signer.getAddress();
+      contract.balanceOf(address)
+        .then((balance: BigNumberish) => dispatch(setBalance(+ethers.utils.formatEther(balance))))
+        .catch(console.error);
+    }
   }, [dispatch, contract, signer]);
 
   return contract ? getBalance : false;
 };
 
-const useRegisterEvents = (contract) => {
+const useRegisterEvents = (contract: Contract | undefined) => {
   const signer = useSigner();
   const getBalance = useGetBalance();
   const getAllowance = useGetAllowance();
 
   useEffect(() => {
-    if (contract && getBalance && getAllowance) {
+    if (contract && signer && getBalance && getAllowance) {
       (async () => {
         const address = await signer.getAddress();
         const filterFrom = contract.filters.Transfer(address, null);
@@ -99,10 +101,12 @@ export const useGetAllowance = () => {
   const signer = useSigner();
   
   const getAllowance = useCallback(async () => {
-    const account = await signer.getAddress();
-    contract.allowance(account, address)
-      .then((allowance) => dispatch(setAllowance(ethers.utils.formatUnits(allowance, 18))))
-      .catch(console.error);
+    if (contract && signer) {
+      const account = await signer.getAddress();
+      contract.allowance(account, address)
+        .then((allowance: BigNumberish) => dispatch(setAllowance(+ethers.utils.formatEther(allowance))))
+        .catch(console.error);
+    }
   }, [dispatch, contract, signer, address]);
 
   return contract && address ? getAllowance : false;
