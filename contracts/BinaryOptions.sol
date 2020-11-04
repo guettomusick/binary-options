@@ -21,20 +21,23 @@ contract BinaryOptions {
 
   BinToken public token;
 
-  event Bought(uint256 amount);
-  event Sold(uint256 amount);
+  event Bought(address indexed from);
+  event Sold(address indexed from);
+  event Place(address indexed from);
+  event Execute(uint32 timeStamp);
+  event Collect(address indexed from);
 
   struct Round {
-    uint32[] options; // Options on this round
     bool executed; // If the round has been executed
-    uint256 price; // Price at the end of the round
+    uint32 options; // total options placed at round
+    uint64 price; // Price at the end of the round
     uint256 higherAmount;
     uint256 lowerAmount;
   }
   
   //Options stored in arrays of structs
   struct Option {
-    uint256 price; // Price in USD (18 decimal places) when the option was issued
+    uint64 price; // Price in USD (18 decimal places) when the option was issued
     bool higher; // Type of higher/lower bet
     uint32 execute; // Unix timeStamp of expiration time
     uint256 amount; // Amount of tokens the option contract is for
@@ -80,23 +83,9 @@ contract BinaryOptions {
   }
 
   /**
-    @dev Returns the total number of options at round
-   */ 
-  function getOptionsAtRoundLength(uint32 timeStamp) public view returns (uint256) {
-    return rounds[timeStamp].options.length;
-  }
-
-  /**
-    @dev Returns the of option at round
-   */ 
-  function getOptionIndexAtRound(uint32 timeStamp, uint256 index) public view returns (uint256) {
-    return rounds[timeStamp].options[index];
-  }
-
-  /**
     @dev Returns the latest ETH price
    */ 
-  function getEthPrice() public view returns (uint256) {
+  function getEthPrice() public view returns (uint64) {
     (
       uint80 roundID, 
       int price,
@@ -108,7 +97,7 @@ contract BinaryOptions {
     require(timeStamp > 0, 'Round not complete');
     //Price should never be negative thus cast int to unit is ok
     //Price is 8 decimal places and will require 1e10 correction later to 18 places
-    return uint256(price);
+    return uint64(price);
   }
 
   /**
@@ -182,7 +171,7 @@ contract BinaryOptions {
     
     // mint new tokens and transfer to wallet
     token.mint(msg.sender, ehterToBin(amountTobuy, price));
-    emit Bought(amountTobuy);
+    emit Bought(msg.sender);
   }
 
   /**
@@ -204,7 +193,7 @@ contract BinaryOptions {
 
     // transfer ETH from contract
     msg.sender.transfer(binToEther(amount, price));
-    emit Sold(amount);
+    emit Sold(msg.sender);
   }
 
   /**
@@ -232,10 +221,10 @@ contract BinaryOptions {
     } else {
       round.lowerAmount += amount;
     }
+    round.options++;
 
     // Save option and index of option on round and pending
     uint32 index = uint32(options.length);
-    round.options.push(index);
     pendingOptions[msg.sender].push(index);
     options.push(Option(
       getEthPrice(),
@@ -247,6 +236,7 @@ contract BinaryOptions {
       msg.sender,
       false
     ));
+    emit Place(msg.sender);
   }
 
   /**
@@ -254,15 +244,42 @@ contract BinaryOptions {
     @param timeStamp The round to execute, must be interval multiplus and in the past
    */
   function executeRound(uint32 timeStamp) public {
+    Round storage round = rounds[timeStamp];
     require(msg.sender == owner, "Only owner can execute round");
     require(timeStamp <= now, "Can't execute a future round");
     require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
-    require(rounds[timeStamp].options.length > 0, "No data for current round");
-    require(!rounds[timeStamp].executed, "Round already executed");
+    require(round.options > 0, "No data for current round");
+    require(!round.executed, "Round already executed");
 
     // Marks round as executed and set price feed
-    rounds[timeStamp].executed = true;
-    rounds[timeStamp].price = getEthPrice();
+    round.executed = true;
+    round.price = getEthPrice();
+    emit Execute(timeStamp);
+  }
+
+  /**
+    @dev Returns the amount and length of ready to collect options
+   */
+  function getReadyToCollect() public view returns (uint256, uint256) {
+    uint32[] storage pending = pendingOptions[msg.sender];
+    uint256 amount;
+    uint256 readyToCollectLength;
+
+    for (uint32 i=0; i<pending.length; i++) {
+      Option storage option = options[pending[i]];
+      Round storage round = rounds[option.execute];
+      if (round.executed) {
+        readyToCollectLength++;
+        // Round executed, can process option
+        bool winner = option.higher ? round.price > option.price : round.price < option.price;
+        if (winner) {
+          // add amount to total transaction
+          amount += option.amount.mul(100000+option.payout).div(100000);
+        }
+      }
+    }
+
+    return (readyToCollectLength, amount);
   }
 
   /**
@@ -290,12 +307,7 @@ contract BinaryOptions {
     for (uint32 i=0; i<pending.length;) {
       Option storage option = options[pending[i]];
       Round storage round = rounds[option.execute];
-      if (round.options.length == 0) {
-        // Inavlid bet, consider it a loose
-        deletePending(i);
-
-        // After deleting, No need to increment, we need to process moved last element
-      } else if (round.executed) {
+      if (round.executed) {
         // Round executed, can process option
         bool winner = option.higher ? round.price > option.price : round.price < option.price;
         if (winner) {
@@ -323,5 +335,6 @@ contract BinaryOptions {
       // Send the total amount to the winner
       token.transfer(msg.sender, amount);
     }
+    emit Collect(msg.sender);
   }
 }

@@ -3,6 +3,7 @@ import { createStore, combineReducers, compose } from 'redux';
 import wallet from './wallet';
 import binToken from './binToken';
 import binaryOptions from './binaryOptions';
+import priceFeed from './priceFeed';
 
 declare global {
   interface Window {
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
   wallet,
   binToken,
   binaryOptions,
+  priceFeed,
 });
 
 const store = createStore(

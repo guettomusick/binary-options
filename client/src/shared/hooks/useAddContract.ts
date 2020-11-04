@@ -18,7 +18,8 @@ export const useAddContract = (
   contract: Contract | undefined,
   action: (contract: Contract) => Action<Contract>,
   contractInterface: ContractInterface,
-  address?: string) => {
+  address?: string
+) => {
   const provider = useProvider();
   const signer = useSigner();
   const dispatch = useDispatch();
