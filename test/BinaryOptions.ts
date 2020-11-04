@@ -233,10 +233,11 @@ describe('BinaryOptions', function() {
 
       it('should place one option', async () => {
         const timeStamp = getNextPlayableRound();
+        const address = await sender.getAddress();
         await binaryOptions.connect(sender).place(timeStamp, getTokens(1), true);
         
         // token transfer from wallet
-        expect(await binToken.balanceOf(await sender.getAddress())).to.equal(getTokens(99));
+        expect(await binToken.balanceOf(address)).to.equal(getTokens(99));
         // tokens not burned
         expect(await binToken.totalSupply()).to.equal(getTokens(100));
         // tokens transferred to contract
@@ -245,8 +246,9 @@ describe('BinaryOptions', function() {
         expect(await binaryOptions.getOptionsLength()).to.equal(1);
 
         const round = await binaryOptions.rounds(timeStamp);
-        const pendingOption = await binaryOptions.pendingOptions(await sender.getAddress(), 0);
+        const pendingOption = await binaryOptions.pendingOptions(address, 0);
         const options = await binaryOptions.options(0);
+        const readyToCollect = await binaryOptions.connect(sender).getReadyToCollect();
 
         expect(round.higherAmount).to.equal(getTokens(1));
         expect(pendingOption).to.equal(0);
@@ -257,6 +259,8 @@ describe('BinaryOptions', function() {
         expect(options.payout).to.equal(DEF_PAYOUT);
         expect(options.buyer).to.equal(await sender.getAddress());
         expect(options.winner).to.equal(false);
+        expect(readyToCollect[0]).to.equal(0);
+        expect(readyToCollect[1]).to.equal(0);
       });
 
       it('should add to both higher and lower at round', async () => {
@@ -267,12 +271,12 @@ describe('BinaryOptions', function() {
         expect(await binaryOptions.getOptionsLength()).to.equal(2);
         expect(await binaryOptions.getPendingOptionsLength(await sender.getAddress())).to.equal(2);
         expect(await binaryOptions.getCollectedOptionsLength(await sender.getAddress())).to.equal(0);
-        expect(await binaryOptions.getOptionsAtRoundLength(timeStamp)).to.equal(2);
 
         const round = await binaryOptions.rounds(timeStamp);
 
         expect(round.higherAmount).to.equal(getTokens(1));
         expect(round.lowerAmount).to.equal(getTokens(2));
+        expect(round.options).to.equal(2);
       });
     });
   });
@@ -316,7 +320,12 @@ describe('BinaryOptions', function() {
       timeTravel(INTERVAL*2);
       await EthPriceFeed.mock.latestRoundData.returns(0, ETH_PRICE + 100, getLastRound(), getLastRound(), 0);
       await binaryOptions.executeRound(timeStamp);
-      await binaryOptions.connect(sender).collect(); 
+
+      const readyToCollect = await binaryOptions.connect(sender).getReadyToCollect();
+      expect(readyToCollect[0]).to.equal(1);
+      expect(readyToCollect[1]).to.equal(getTokens(1*(1+DEF_PAYOUT/100000)));
+
+      await binaryOptions.connect(sender).collect();       
 
       expect(await binaryOptions.getOptionsLength()).to.equal(1);
       expect(await binaryOptions.getPendingOptionsLength(await sender.getAddress())).to.equal(0);
@@ -331,6 +340,11 @@ describe('BinaryOptions', function() {
       timeTravel(INTERVAL*2);
       await EthPriceFeed.mock.latestRoundData.returns(0, ETH_PRICE - 100, getLastRound(), getLastRound(), 0);
       await binaryOptions.executeRound(timeStamp);
+
+      const readyToCollect = await binaryOptions.connect(sender).getReadyToCollect();
+      expect(readyToCollect[0]).to.equal(1);
+      expect(readyToCollect[1]).to.equal(0);
+
       await binaryOptions.connect(sender).collect();
 
       expect(await binaryOptions.getOptionsLength()).to.equal(1);
@@ -346,6 +360,11 @@ describe('BinaryOptions', function() {
       timeTravel(INTERVAL*2);
       await EthPriceFeed.mock.latestRoundData.returns(0, ETH_PRICE - 100, getLastRound(), getLastRound(), 0);
       await binaryOptions.executeRound(timeStamp);
+
+      const readyToCollect = await binaryOptions.connect(sender).getReadyToCollect();
+      expect(readyToCollect[0]).to.equal(1);
+      expect(readyToCollect[1]).to.equal(getTokens(1*(1+DEF_PAYOUT/100000)));
+
       await binaryOptions.connect(sender).collect(); 
 
       expect(await binaryOptions.getOptionsLength()).to.equal(1);
@@ -361,6 +380,11 @@ describe('BinaryOptions', function() {
       timeTravel(INTERVAL*2);
       await EthPriceFeed.mock.latestRoundData.returns(0, ETH_PRICE + 100, getLastRound(), getLastRound(), 0);
       await binaryOptions.executeRound(timeStamp);
+
+      const readyToCollect = await binaryOptions.connect(sender).getReadyToCollect();
+      expect(readyToCollect[0]).to.equal(1);
+      expect(readyToCollect[1]).to.equal(0);
+
       await binaryOptions.connect(sender).collect();
 
       expect(await binaryOptions.getOptionsLength()).to.equal(1);

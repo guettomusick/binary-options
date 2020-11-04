@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers } from 'ethers';
@@ -41,3 +41,16 @@ export const useInitializeWallet = () => {
 
 export const useProvider = () => useSelector(state => state.wallet.provider);
 export const useSigner = () => useSelector(state => state.wallet.signer);
+
+export const useNetwork = () => {
+  const provider = useProvider();
+  const [network, setNetwork] = useState<ethers.providers.Network | undefined>();
+
+  useEffect(() => {
+    if (provider) {
+      provider.getNetwork().then((network) => setNetwork(network));
+    }
+  }, [provider]);
+
+  return network;
+}
