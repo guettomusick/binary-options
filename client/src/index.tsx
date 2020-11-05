@@ -3,12 +3,14 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 
 import App from './App';
+import Header from './components/Header';
 import reportWebVitals from './reportWebVitals';
 import store from './shared/redux';
 
 ReactDOM.render(
   <React.StrictMode>
     <Provider store={store}>
+      <Header />
       <App />
     </Provider>
   </React.StrictMode>,

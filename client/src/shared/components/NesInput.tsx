@@ -22,6 +22,7 @@ type Props = {
 const NesInputContainer = styled.div<StyledProps>`
   flex-grow: 1;
   margin: 0;
+  margin: 5px 0;
 
   /* Chrome, Safari, Edge, Opera */
   input::-webkit-outer-spin-button,
