@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package* yarn* ./
 
 RUN yarn
+RUN yarn compile
 
 # Copy directory to container
 COPY . ./
