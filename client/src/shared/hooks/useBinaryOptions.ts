@@ -1,9 +1,11 @@
+import { useGetBalance } from './useBinToken';
+import { useLoadingDialog } from './useDialog';
 import { useEffect, useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { ethers, BigNumber, Contract } from 'ethers';
 
 import { useAddContract } from './useAddContract';
-import { setContract, setToken, setPrice, setOptions, setSummary, Option } from '../redux/binaryOptions';
+import { setContract, setToken, setPrice, setOptions, setSummary, Option, setPayout, updatePayout } from '../redux/binaryOptions';
 
 import BinaryOptions from '../../artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
 import Networks from '../../config/networks.json';
@@ -96,7 +98,7 @@ export const useGetSummary = () => {
       dispatch(setSummary({
         pending: pendingLength.toNumber(),
         readyToCollect: readyToCollectLength.toNumber(),
-        readyToCollectAmount: amount.toNumber(),
+        readyToCollectAmount: +ethers.utils.formatEther(amount),
       }));
     }
   }, [dispatch, contract, signer]);
@@ -104,14 +106,31 @@ export const useGetSummary = () => {
   return contract ? getSummary : false;
 };
 
+export const useGetPayout = (action: Function) => {
+  const dispatch = useDispatch();
+  const contract = useContract();
+
+  const getPayOut = useCallback(async (timestamp: number) => {
+    if (contract && timestamp) {
+      const higher = await contract.getPayOut(timestamp, true);
+      const lower = await contract.getPayOut(timestamp, false);
+
+      dispatch(action(timestamp, { higher, lower }));
+    }
+  }, [dispatch, contract, action]);
+
+  return contract ? getPayOut : false;
+};
+
 const useRegisterEvents = (contract: Contract | undefined) => {
   const getPrice = useGetPrice();
   const getSummary = useGetSummary();
   const getOptions = useGetOptions();
+  const getPayOut = useGetPayout(updatePayout);
   const signer = useSigner();
 
   useEffect(() => {
-    if (contract && signer && getPrice && getSummary && getOptions) {
+    if (contract && signer && getPrice && getSummary && getOptions && getPayOut) {
       (async () => {
         const address = await signer.getAddress();
         contract.on('Bought', getPrice);
@@ -124,14 +143,17 @@ const useRegisterEvents = (contract: Contract | undefined) => {
 
         contract.on('Execute', optionsUpdate);
         const filterPlace = contract.filters.Place(address);
-        contract.on(filterPlace, optionsUpdate);
+        contract.on(filterPlace, (event, timestamp) => {
+          optionsUpdate();
+          getPayOut(timestamp);
+        });
         const filterCollect = contract.filters.Collect(address);
         contract.on(filterCollect, optionsUpdate);
         getPrice();
         optionsUpdate();
       })();
     }
-  }, [contract, signer, getPrice, getSummary, getOptions]);
+  }, [contract, signer, getPrice, getSummary, getOptions, getPayOut]);
 };
 
 export const useInitializeContract = () => {
@@ -185,20 +207,26 @@ export const usePrice = () => {
 
 export const useBuy = () => {
   const contract = useContract();
+  const getBalance = useGetBalance();
+  const { show, hide } = useLoadingDialog('Waiting for Buy transaction to complete');
 
   const buy = useCallback( 
     async (amount) => {
-      if (contract) {
+      if (contract && getBalance) {
         try {
+          show();
           const tx = await contract.buy({ value: ethers.utils.parseEther(amount) })
-          const receipt = tx.wait();
+          const receipt = await tx.wait();
+          await getBalance();
           return { tx, receipt };
         } catch(error) {
           console.error(error);
+        } finally {
+          hide();
         }
       }
     },
-    [contract],
+    [contract, show, hide, getBalance],
   );
 
   return buy;
@@ -206,41 +234,69 @@ export const useBuy = () => {
 
 export const useSell = () => {
   const contract = useContract();
+  const getBalance = useGetBalance();
+  const { show, hide } = useLoadingDialog('Waiting for Sell transaction to complete');
 
   const sell = useCallback(
     async (amount) => {
-      if (contract) {
+      if (contract && getBalance) {
         try {
+          show();
           const tx = await contract.sell(ethers.utils.parseEther(amount));
-          const receipt = tx.wait();
+          const receipt = await tx.wait();
+          await getBalance();
           return { tx, receipt };
         } catch(error) {
           console.error(error);
+        } finally {
+          hide();
         }
       }
     },
-    [contract],
+    [contract, show, hide, getBalance],
   );
 
   return sell;
 };
 
+const useUpdateOptionsAndPayout = () => {
+  const getSummary = useGetSummary();
+  const getOptions = useGetOptions();
+  const getPayOut = useGetPayout(updatePayout);
+
+  return useCallback(async (timestamp?: number) => {
+    if (getSummary && getOptions && getPayOut) {
+      await getSummary();
+      await getOptions();
+      if (timestamp) {
+        await getPayOut(timestamp);
+      }
+    }
+  }, [getSummary, getOptions, getPayOut]);
+}
+
 export const usePlace = () => {
   const contract = useContract();
+  const update = useUpdateOptionsAndPayout();
+  const { show, hide } = useLoadingDialog('Waiting for Place transaction to complete');
 
   const place = useCallback(
     async (timestamp, amount, higher) => {
       if (contract) {
         try {
+          show();
           const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher);
-          const receipt = tx.wait();
+          const receipt = await tx.wait();
+          await update(timestamp);
           return { tx, receipt };
         } catch(error) {
           console.error(error);
+        } finally {
+          hide();
         }
       }
     },
-    [contract],
+    [contract, show, hide, update],
   );
 
   return place;
@@ -248,20 +304,26 @@ export const usePlace = () => {
 
 export const useCollect = () => {
   const contract = useContract();
+  const update = useUpdateOptionsAndPayout();
+  const { show, hide } = useLoadingDialog('Waiting for Collect transaction to complete');
 
   const collect = useCallback(
     async () => {
       if (contract) {
         try {
+          show();
           const tx = await contract.collect();
-          const receipt = tx.wait();
+          const receipt = await tx.wait();
+          await update();
           return { tx, receipt };
         } catch(error) {
           console.error(error);
+        } finally {
+          hide();
         }
       }
     },
-    [contract],
+    [contract, show, hide, update],
   );
 
   return collect;
@@ -311,4 +373,17 @@ export const useExecute = () => {
   );
 
   return execute;
+};
+
+export const usePayOut = (timestamp: number) => {
+  const payout = useSelector(state => state.binaryOptions.payouts[timestamp]);
+  const getPayOut = useGetPayout(setPayout);
+
+  useEffect(() => {
+    if (!payout && getPayOut) {
+      getPayOut(timestamp);
+    }
+  }, [payout, getPayOut, timestamp]);
+
+  return payout || {};
 };

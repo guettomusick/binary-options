@@ -6,10 +6,12 @@ import { useExecute, useInitializeContract as useBinaryOptionsContract, useOptio
 import { useInitializeContract as useBinTokenContract } from './shared/hooks/useBinToken';
 
 import Loading from './components/Loading';
-import Buy from './components/Buy';
-import Sell from './components/Sell';
+import BuySell from './components/BuySell';
 import Place from './components/Place';
 import Collect from './components/Collect';
+import NesDialog from './shared/components/NesDialog';
+import NesBalloonSection from './shared/components/NesBalloonSection';
+import NesBalloon from './shared/components/NesBalloon';
 
 const Container = styled.div`
   display: block;
@@ -46,10 +48,14 @@ const App = () => {
   
   return (
     <Container>
-      <Buy/>
-      <Sell />
+      <NesBalloonSection>
+        <NesBalloon left>BIN Token is an ETH backed coin, BIN supply is governed only by binary options payments.</NesBalloon>
+        <NesBalloon right>Tokens will be minted in case winner options cannot be payed, and will be burned if BIN contract balance increase.</NesBalloon>
+      </NesBalloonSection>
+      <BuySell/>
       <Place />
       <Collect />
+      <NesDialog rounded/>
     </Container>
   );
 };

@@ -14,7 +14,7 @@ import Inline from  '../shared/components/Inline';
 import { useBalance, useNeedAllowance, useNeedBalance } from '../shared/hooks/useBinToken';
 import { useGetEthPrice } from '../shared/hooks/usePriceFeed';
 import { useHandleChangeWithState } from '../shared/hooks/useHandleChange';
-import { useGetRoundTimestamps, usePlace } from '../shared/hooks/useBinaryOptions';
+import { useGetRoundTimestamps, usePayOut, usePlace } from '../shared/hooks/useBinaryOptions';
 
 const Place = () => {
   const balance = useBalance();
@@ -28,6 +28,7 @@ const Place = () => {
     timestamp: '',
     amount: 0,
   });
+  const payout = usePayOut(+timestamp);
 
   const clearHandler = () => {
     setData({
@@ -67,7 +68,7 @@ const Place = () => {
         inline
       >
         { timestamps.map(ts => (
-          <option value={ts} key={ts}>{ts}</option>
+          <option value={ts} key={ts}>{ (new Date(ts*1000)).toLocaleString() }</option>
         ))}
       </NesSelect>
       <Inline>
@@ -84,8 +85,12 @@ const Place = () => {
         <p>BIN</p>
       </Inline>
       <NesRadioContainer>
-        <NesRadio name='higher' onChange={changeHandler} checked={higher === 'High'} value='High'>High</NesRadio>
-        <NesRadio name='higher' onChange={changeHandler} checked={higher === 'Low'} value='Low'>Low</NesRadio>
+        <NesRadio name='higher' onChange={changeHandler} checked={higher === 'High'} value='High'>
+          High <span className='nes-text is-success'>[PO: { payout.higher ? `${payout.higher/1000}%` : '-'}]</span>
+        </NesRadio>
+        <NesRadio name='higher' onChange={changeHandler} checked={higher === 'Low'} value='Low'>
+          Low <span className='nes-text is-success'>[PO: { payout.lower ? `${payout.lower/1000}%` : '-'}]</span>
+        </NesRadio>
       </NesRadioContainer>
       <NesAction>
         <NesButton onClick={clearHandler}>Clear</NesButton>
