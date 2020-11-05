@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 
 import * as fs from 'fs';
 
-const mnemonic = fs.readFileSync('../.secret').toString().trim();
+const mnemonic = fs.readFileSync('.secret').toString().trim();
 
 import BinaryOptions from '../client/src/artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
 import Networks from '../client/src/config/networks.json';

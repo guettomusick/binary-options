@@ -9,7 +9,8 @@
     "signer": "hardhat signer",
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "deploy": "hardhat run scripts/binary-options-deploy.ts"
+    "deploy": "hardhat run scripts/binary-options-deploy.ts",
+    "executor": "ts-node server/index"
   },
   "repository": {
     "type": "git",
