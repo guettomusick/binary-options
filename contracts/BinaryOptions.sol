@@ -23,7 +23,7 @@ contract BinaryOptions {
 
   event Bought(address indexed from);
   event Sold(address indexed from);
-  event Place(address indexed from);
+  event Place(address indexed from, uint32 timeStamp);
   event Execute(uint32 timeStamp);
   event Collect(address indexed from);
 
@@ -154,7 +154,7 @@ contract BinaryOptions {
     @dev Returns the payout at a given timestamp
     @param timeStamp The timestamp at which to get the payout
    */
-  function getPayOut(uint32 timeStamp) public view returns(uint256) {
+  function getPayOut(uint32 timeStamp, bool higher) public view returns(uint256) {
     // TODO Get an accurate dynamic payout
     return 80000;
   }
@@ -232,11 +232,11 @@ contract BinaryOptions {
       timeStamp,
       amount,
       index,
-      getPayOut(timeStamp),
+      getPayOut(timeStamp, higher),
       msg.sender,
       false
     ));
-    emit Place(msg.sender);
+    emit Place(msg.sender, timeStamp);
   }
 
   /**

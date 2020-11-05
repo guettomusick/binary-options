@@ -18,6 +18,21 @@ export const setOptions = (options: Options) => ({ type: SET_BINARY_OPTIONS, pay
 const SET_BINARY_OPTIONS_SUMMARY = 'SET_BINARY_OPTIONS_SUMMARY';
 export const setSummary = (options: Summary) => ({ type: SET_BINARY_OPTIONS_SUMMARY, payload: options });
 
+const SET_BINARY_OPTIONS_PAYOUT = 'SET_BINARY_OPTIONS_PAYOUT';
+export const setPayout = (timestamp: number, payout: Payout) => ({ type: SET_BINARY_OPTIONS_PAYOUT, payload: { timestamp, payout } });
+
+const UPDATE_BINARY_OPTIONS_PAYOUT = 'UPDATE_BINARY_OPTIONS_PAYOUT';
+export const updatePayout = (timestamp: number, payout: Payout) => ({ type: UPDATE_BINARY_OPTIONS_PAYOUT, payload: { timestamp, payout } });
+
+export type Payout = {
+  higher?: number,
+  lower?: number,
+};
+
+export type Payouts = {
+  [key: number]: Payout,
+};
+
 export type Option = {
   price: number,
   higher: boolean,
@@ -54,6 +69,7 @@ export type BinaryOptionsStore = {
   price?: number,
   options: Options,
   summary: Summary,
+  payouts: Payouts,
 };
 
 // reducer
@@ -64,6 +80,7 @@ const initialState: BinaryOptionsStore = {
     collected: [],
   },
   summary: {},
+  payouts: {},
 };
 
 const binaryOptions = (state = initialState, action: Action<any>) => {
@@ -95,6 +112,16 @@ const binaryOptions = (state = initialState, action: Action<any>) => {
         ...state,
         summary: payload as Summary,
       };
+    case SET_BINARY_OPTIONS_PAYOUT:
+      if (state.payouts[payload.timestamp]) {
+        return state;
+      };
+
+      state.payouts[payload.timestamp] = payload.payout;
+      return { ...state };
+    case UPDATE_BINARY_OPTIONS_PAYOUT:
+      state.payouts[payload.timestamp] = payload.payout;
+      return { ...state };
     default:
       return state;
   }

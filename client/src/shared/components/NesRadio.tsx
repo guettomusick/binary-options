@@ -1,5 +1,10 @@
 import React, { FC } from 'react';
 import classNames from 'classnames';
+import styled from 'styled-components';
+
+const Label = styled.label`
+  margin-right: 10px;
+`;
 
 type Props = {
   name: string,
@@ -17,7 +22,7 @@ const NesRadio: FC<Props> = ({
   onChange,
   children,
 }) => (
-  <label>
+  <Label>
     <input
       type='radio'
       className={ classNames({
@@ -31,7 +36,7 @@ const NesRadio: FC<Props> = ({
       onChange={onChange}
     />
     <span>{ children }</span>
-  </label>
+  </Label>
 );
 
 export default NesRadio;

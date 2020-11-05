@@ -4,6 +4,7 @@ import wallet from './wallet';
 import binToken from './binToken';
 import binaryOptions from './binaryOptions';
 import priceFeed from './priceFeed';
+import dialog from './dialog';
 
 declare global {
   interface Window {
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   binToken,
   binaryOptions,
   priceFeed,
+  dialog,
 });
 
 const store = createStore(
