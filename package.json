@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/guettomusick/binary-options#readme",
   "dependencies": {
-    "@metamask/detect-provider": "^1.2.0",
     "@openzeppelin/contracts": "^3.2.0"
   },
   "devDependencies": {
