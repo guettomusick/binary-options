@@ -10,10 +10,12 @@ contract BinaryOptions {
   //Overflow safe operators
   using SafeMath for uint32;
   using SafeMath for uint256;
-  address private owner;
 
   // Constants
   uint256 constant interval = 10 minutes;
+  uint256 constant MAX_INT = 2**256 - 1;
+
+  address private owner;
   
   //Pricefeed interfaces
   AggregatorV3Interface internal ethFeed;
@@ -47,18 +49,27 @@ contract BinaryOptions {
     bool winner;
   }
 
+  struct LockBalance {
+    uint256 total;
+    uint256 available;
+  }
+
   Option[] public options;
   mapping(uint32 => Round) public rounds;
   mapping(address => uint32[]) public pendingOptions;
   mapping(address => uint32[]) public collectedOptions;
+  mapping(address => LockBalance) public lockBalance;
 
   //Kovan feeds: https://docs.chain.link/docs/reference-contracts
   constructor(address ethFeedAddress) public {
     token = new BinToken();
+    token.approve(address(this), MAX_INT);
+
     //ETH/USD Kovan feed
     ethFeed = AggregatorV3Interface(ethFeedAddress);
 
     owner = msg.sender;
+
   }
 
   /**
@@ -86,13 +97,7 @@ contract BinaryOptions {
     @dev Returns the latest ETH price
    */ 
   function getEthPrice() public view returns (uint64) {
-    (
-      uint80 roundID, 
-      int price,
-      uint256 startedAt,
-      uint256 timeStamp,
-      uint80 answeredInRound
-    ) = ethFeed.latestRoundData();
+    ( , int price, , uint256 timeStamp, ) = ethFeed.latestRoundData();
     // If the round is not complete yet, timeStamp is 0
     require(timeStamp > 0, 'Round not complete');
     //Price should never be negative thus cast int to unit is ok
@@ -162,15 +167,23 @@ contract BinaryOptions {
   /**
     @dev Mint a given amount of tokens to the sender paying with ether at current price
    */
-  function buy() payable public { 
-    uint256 amountTobuy = msg.value;
-    require(amountTobuy > 0, "You need to send some Ether");
+  function buy(bool lock) payable public { 
+    uint256 amount = msg.value;
+    require(amount > 0, "You need to send some Ether");
 
     // get the current price for convertion
-    uint256 price = getPrice(amountTobuy);
+    uint256 price = getPrice(amount);
     
-    // mint new tokens and transfer to wallet
-    token.mint(msg.sender, ehterToBin(amountTobuy, price));
+    if (lock) {
+      // add balance to lockBalance
+      token.mint(address(this), ehterToBin(amount, price));
+      // mint new tokens to contract wallet
+      lockBalance[msg.sender].total += ehterToBin(amount, price);
+      lockBalance[msg.sender].available += ehterToBin(amount, price);
+    } else {
+      // mint new tokens and transfer to wallet
+      token.mint(msg.sender, ehterToBin(amount, price));
+    }
     emit Bought(msg.sender);
   }
 
@@ -178,19 +191,28 @@ contract BinaryOptions {
     @dev Burns a given number of tokens on the sender wallet and transfer ether at current price
     @param amount The number of tokens to sell/burn
    */
-  function sell(uint256 amount) public {
+  function sell(uint256 amount, bool fromLock) public {
     require(amount > 0, "You need to sell at least some tokens");
-    uint256 allowance = token.allowance(msg.sender, address(this));
-    require(allowance >= amount, "Check the token allowance");
-    uint256 balance = token.balanceOf(msg.sender);
-    require(balance >= amount, "Not enough balance");
-
+    
     // get the current price for convertion
     uint256 price = getPrice(0);
 
-    // burn tokens form wallet
-    token.burnFrom(msg.sender, amount);
+    if (fromLock) {
+      ( bool valid, uint256 burn ) = collect(amount);
+      require(valid, "Not enough balance");
 
+      uint256 balance = token.balanceOf(address(this));
+      uint256 totalBurn = (amount + burn) > balance ? balance : (amount + burn);
+      token.burnFrom(address(this), totalBurn);
+    } else {
+      uint256 allowance = token.allowance(msg.sender, address(this));
+      require(allowance >= amount, "Check the token allowance");
+      uint256 balance = token.balanceOf(msg.sender);
+      require(balance >= amount, "Not enough balance");
+
+      // burn tokens form wallet
+      token.burnFrom(msg.sender, amount);
+    }
     // transfer ETH from contract
     msg.sender.transfer(binToEther(amount, price));
     emit Sold(msg.sender);
@@ -202,17 +224,21 @@ contract BinaryOptions {
     @param amount The number of tokens to bet
     @param higher bet for higher or lower
    */
-  function place(uint32 timeStamp, uint256 amount, bool higher) public {
+  function place(uint32 timeStamp, uint256 amount, bool higher, bool doCollect) public {
     require(amount > 0, "You need to send some BIN");
-    uint256 allowance = token.allowance(msg.sender, address(this));
-    require(allowance >= amount, "Check the token allowance");
     require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
     // Get next round timestamp
     uint256 nextRound = now.sub(now.mod(interval)).add(interval);
     require(timeStamp > nextRound, "You can't bet for next round");
+
+    if (doCollect) {
+      collect(0);
+    }
+
+    LockBalance storage balance = lockBalance[msg.sender];
+    require(balance.available >= amount, "Not enough locked balance");
     
-    // Collect Tokens on internal wallet
-    token.transferFrom(msg.sender, address(this), amount);
+    balance.available -= amount;
 
     Round storage round = rounds[timeStamp];
     // Keep track of total higher and lower bets for future reference
@@ -299,10 +325,11 @@ contract BinaryOptions {
 
   /**
     @dev Collect pending executed options
+    @param unlockAmount Optional amount to unlock
    */
-  function collect() public {
+  function collect(uint256 unlockAmount) internal returns (bool, uint256) {
     uint32[] storage pending = pendingOptions[msg.sender];
-    uint256 amount;
+    LockBalance storage balance = lockBalance[msg.sender];
 
     for (uint32 i=0; i<pending.length;) {
       Option storage option = options[pending[i]];
@@ -312,29 +339,49 @@ contract BinaryOptions {
         bool winner = option.higher ? round.price > option.price : round.price < option.price;
         if (winner) {
           // add amount to total transaction
-          amount += option.amount.mul(100000+option.payout).div(100000);
+          balance.available += option.amount.mul(100000+option.payout).div(100000);
           option.winner = true;
         }
 
         deletePending(i);
-
+        continue;
         // After deleting, No need to increment, we need to process moved last element
-      } else {
-        // Not executed yet, leave on pending and check next one
-        i++;
       }
+      // Not executed yet, leave on pending and check next one
+      i++;
     }
 
-    if (amount > 0) {
-      uint256 balance = token.balanceOf(address(this));
-      if (balance < amount) {
-        // Not enough balance, we mint new tokens to pay the bets
-        uint256 mintAmount = amount.sub(balance);
-        token.mint(address(this), mintAmount);
+    if (unlockAmount > 0) {
+      if (balance.available < unlockAmount) {
+        return (false, 0);
       }
-      // Send the total amount to the winner
-      token.transfer(msg.sender, amount);
+
+      balance.available -= unlockAmount;
+
+      if (pending.length == 0 && balance.available == 0 && balance.total > unlockAmount) {
+        balance.total = 0;
+        return (true, balance.total - unlockAmount);
+      }
+      
+      balance.total = balance.total > unlockAmount ? balance.total - unlockAmount : 0;
     }
-    emit Collect(msg.sender);
+    return (true, 0);
+  }
+
+  function unlock(uint256 amount) public {
+    require(amount > 0, "You need to unlock some Token");
+    ( bool valid, uint256 burn ) = collect(amount);
+    require(valid, "Not enough balance");
+
+    uint256 balance = token.balanceOf(address(this));
+    if (balance < amount) {
+      // Not enough balance, we mint new tokens to pay the bets
+      token.mint(address(this), amount.sub(balance));
+    } else if (burn > 0) {
+      // Player quitting, burning excess
+      token.burnFrom(address(this), burn > (balance-amount) ? balance-amount : burn);
+    }
+    // Send the total amount to the player
+    token.transfer(msg.sender, amount);
   }
 }

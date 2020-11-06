@@ -14,9 +14,9 @@ export type ContractInterface = {
   },
 }
 
-export const useAddContract = (
-  contract: Contract | undefined,
-  action: (contract: Contract) => Action<Contract>,
+export const useAddContract = <T extends Contract>(
+  contract: T | undefined,
+  action: (contract: T) => Action<T>,
   contractInterface: ContractInterface,
   address?: string
 ) => {
@@ -33,7 +33,7 @@ export const useAddContract = (
         if (contractAddress) {
           const contractInstance = new ethers.Contract(contractAddress, contractInterface.abi, provider);
           const contractInstanceWithSigner = contractInstance.connect(signer);
-          dispatch(action(contractInstanceWithSigner));
+          dispatch(action(contractInstanceWithSigner as T));
         }
       })();
     }

@@ -7,8 +7,9 @@ import { useAddContract } from './useAddContract';
 import { useToken, useAddress as useBinaryOptionsAddress } from './useBinaryOptions';
 import { setContract, setBalance, setAllowance } from '../redux/binToken';
 
-import BinToken from '../../artifacts/contracts/BinToken.sol/BinToken.json';
+import BinTokenInterface from '../../artifacts/contracts/BinToken.sol/BinToken.json';
 import { useLoadingDialog } from './useDialog';
+import { BinToken } from '../types/typechain';
 
 export const useGetBalance = () => {
   const contract = useContract();
@@ -63,10 +64,10 @@ export const useInitializeContract = () => {
   const contract = useSelector(state => state.binToken.contract);
   useRegisterEvents(contract);
 
-  return useAddContract(
+  return useAddContract<BinToken>(
     contract,
     setContract,
-    BinToken,
+    BinTokenInterface,
     token,
   );
 };
@@ -110,7 +111,7 @@ export const useGetAllowance = () => {
   const signer = useSigner();
   
   const getAllowance = useCallback(async () => {
-    if (contract && signer) {
+    if (contract && signer && address) {
       try {
         const account = await signer.getAddress();
         const allowance = await contract.allowance(account, address);

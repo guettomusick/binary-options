@@ -1,3 +1,4 @@
+import { BinaryOptions } from '../types/typechain';
 import { useGetBalance } from './useBinToken';
 import { useLoadingDialog } from './useDialog';
 import { useEffect, useCallback, useState } from 'react';
@@ -7,7 +8,7 @@ import { ethers, BigNumber, Contract } from 'ethers';
 import { useAddContract } from './useAddContract';
 import { setContract, setToken, setPrice, setOptions, setSummary, Option, setPayout, updatePayout } from '../redux/binaryOptions';
 
-import BinaryOptions from '../../artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
+import BinaryOptionsInterface from '../../artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
 import Networks from '../../config/networks.json';
 import { useSigner } from './useWallet';
 
@@ -35,8 +36,8 @@ export const useGetOptions = () => {
     if (contract && signer) {
       try {
         const address = await signer.getAddress();
-        const pendingOptionsLength = await contract.getPendingOptionsLength(address);
-        const collectedOptionsLength = await contract.getCollectedOptionsLength(address);
+        const pendingOptionsLength = (await contract.getPendingOptionsLength(address)).toNumber();
+        const collectedOptionsLength = (await contract.getCollectedOptionsLength(address)).toNumber();
 
         const pendingOptions = [];
         const readyToCollectOptions = [];
@@ -92,7 +93,7 @@ export const useGetSummary = () => {
   const getSummary = useCallback(async () => {
     if (contract && signer) {
       const address = await signer.getAddress();
-      const [readyToCollectLength, amount] = await contract.getReadyToCollect();
+      const { 0: readyToCollectLength, 1: amount} = await contract.getReadyToCollect();
       const pendingLength = await contract.getPendingOptionsLength(address);
 
       dispatch(setSummary({
@@ -162,10 +163,10 @@ export const useInitializeContract = () => {
 
   const networks = Networks.BinaryOptions;
 
-  return useAddContract(
+  return useAddContract<BinaryOptions>(
     contract,
     setContract,
-    { ...BinaryOptions, networks },
+    { ...BinaryOptionsInterface, networks },
   );
 }
 
@@ -215,7 +216,7 @@ export const useBuy = () => {
       if (contract && getBalance) {
         try {
           show();
-          const tx = await contract.buy({ value: ethers.utils.parseEther(amount) })
+          const tx = await contract.buy(false, { value: ethers.utils.parseEther(amount) })
           const receipt = await tx.wait();
           await getBalance();
           return { tx, receipt };
@@ -242,7 +243,7 @@ export const useSell = () => {
       if (contract && getBalance) {
         try {
           show();
-          const tx = await contract.sell(ethers.utils.parseEther(amount));
+          const tx = await contract.sell(ethers.utils.parseEther(amount), false);
           const receipt = await tx.wait();
           await getBalance();
           return { tx, receipt };
@@ -285,7 +286,7 @@ export const usePlace = () => {
       if (contract) {
         try {
           show();
-          const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher);
+          const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher, false);
           const receipt = await tx.wait();
           await update(timestamp);
           return { tx, receipt };

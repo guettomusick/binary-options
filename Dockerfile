@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Copy client package.json and yarn.lock and install dependencies
 COPY package* yarn* ./
-RUN yarn
+RUN yarn --pure-lockfile
 
 # Copy directory to container
 COPY . ./

@@ -1,10 +1,10 @@
-import { Contract } from '@ethersproject/contracts';
+import { BinaryOptions } from '../types/typechain';
 
 import { Action } from './types';
 
 // actions
 const SET_BINARY_OPTIONS_CONTRACT = 'SET_BINARY_OPTIONS_CONTRACT';
-export const setContract = (contract: Contract) => ({ type: SET_BINARY_OPTIONS_CONTRACT, payload: contract });
+export const setContract = (contract: BinaryOptions) => ({ type: SET_BINARY_OPTIONS_CONTRACT, payload: contract });
 
 const SET_BINARY_OPTIONS_TOKEN = 'SET_BINARY_OPTIONS_TOKEN';
 export const setToken = (token: string) => ({ type: SET_BINARY_OPTIONS_TOKEN, payload: token });
@@ -64,7 +64,7 @@ export type Summary = {
 };
 
 export type BinaryOptionsStore = {
-  contract?: Contract,
+  contract?: BinaryOptions,
   token?: string,
   price?: number,
   options: Options,
@@ -90,7 +90,7 @@ const binaryOptions = (state = initialState, action: Action<any>) => {
     case SET_BINARY_OPTIONS_CONTRACT:
       return {
         ...state,
-        contract: payload as Contract,
+        contract: payload as BinaryOptions,
       };
     case SET_BINARY_OPTIONS_TOKEN:
       return {

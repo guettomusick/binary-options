@@ -1,10 +1,10 @@
-import { Contract } from '@ethersproject/contracts';
+import { BinToken } from '../types/typechain';
 
 import { Action } from './types';
 
 // actions
 const SET_BIN_TOKEN_CONTRACT = 'SET_BIN_TOKEN_CONTRACT';
-export const setContract = (contract: Contract) => ({ type: SET_BIN_TOKEN_CONTRACT, payload: contract });
+export const setContract = (contract: BinToken) => ({ type: SET_BIN_TOKEN_CONTRACT, payload: contract });
 
 const SET_BIN_TOKEN_BALANCE = 'SET_BIN_TOKEN_BALANCE';
 export const setBalance = (balance: number) => ({ type: SET_BIN_TOKEN_BALANCE, payload: balance });
@@ -13,7 +13,7 @@ const SET_BIN_TOKEN_ALLOWANCE = 'SET_BIN_TOKEN_ALLOWANCE';
 export const setAllowance = (allowance: number) => ({ type: SET_BIN_TOKEN_ALLOWANCE, payload: allowance });
 
 export type BinTokenStore = {
-  contract?: Contract,
+  contract?: BinToken,
   balance: number,
   allowance: number,
 }
@@ -31,7 +31,7 @@ const binToken = (state = initialState, action: Action<any>) => {
     case SET_BIN_TOKEN_CONTRACT:
       return {
         ...state,
-        contract: payload as Contract,
+        contract: payload as BinToken,
       };
     case SET_BIN_TOKEN_BALANCE:
       return state.balance === payload ? state : {

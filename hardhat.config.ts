@@ -1,4 +1,6 @@
 import '@nomiclabs/hardhat-waffle';
+import 'hardhat-gas-reporter';
+import 'hardhat-typechain';
 
 import { task, HardhatUserConfig } from 'hardhat/config';
 import * as fs from 'fs';
@@ -58,6 +60,14 @@ const config: HardhatUserConfig = {
     tests: './test',
     cache: './cache',
     artifacts: './client/src/artifacts',
+  },
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 21
+  },
+  typechain: {
+    outDir: 'client/src/shared/types/typechain',
+    target: 'ethers-v5',
   },
 };
 
