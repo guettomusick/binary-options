@@ -21,32 +21,29 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface BinaryOptionsInterface extends ethers.utils.Interface {
+interface BinaryOptionsNoLockInterface extends ethers.utils.Interface {
   functions: {
     "binToEther(uint256,uint256)": FunctionFragment;
     "buy(bool)": FunctionFragment;
+    "collect()": FunctionFragment;
+    "collectedOptions(address,uint256)": FunctionFragment;
     "ehterToBin(uint256,uint256)": FunctionFragment;
     "executeRound(uint32)": FunctionFragment;
     "getBinSupply()": FunctionFragment;
     "getCollateral()": FunctionFragment;
+    "getCollectedOptionsLength(address)": FunctionFragment;
     "getEthPrice()": FunctionFragment;
     "getOptionsLength()": FunctionFragment;
     "getPayOut(uint32,bool)": FunctionFragment;
     "getPendingOptionsLength(address)": FunctionFragment;
-    "getPlayerOptionsLength(address)": FunctionFragment;
-    "getPrice(uint256,uint256)": FunctionFragment;
-    "getReadyToCollect(address)": FunctionFragment;
-    "getReadyToCollectOption(address,uint256)": FunctionFragment;
-    "lastComputedPrice()": FunctionFragment;
-    "lock(uint256)": FunctionFragment;
-    "lockBalances(address)": FunctionFragment;
+    "getPrice(uint256)": FunctionFragment;
+    "getReadyToCollect()": FunctionFragment;
     "options(uint256)": FunctionFragment;
-    "place(uint32,uint256,bool,uint256[])": FunctionFragment;
-    "playerOptions(address,uint256)": FunctionFragment;
+    "pendingOptions(address,uint256)": FunctionFragment;
+    "place(uint32,uint256,bool,bool)": FunctionFragment;
     "rounds(uint32)": FunctionFragment;
-    "sell(uint256,bool,uint256[])": FunctionFragment;
+    "sell(uint256,bool)": FunctionFragment;
     "token()": FunctionFragment;
-    "unlock(uint256,uint256[])": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -54,6 +51,11 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "buy", values: [boolean]): string;
+  encodeFunctionData(functionFragment: "collect", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "collectedOptions",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "ehterToBin",
     values: [BigNumberish, BigNumberish]
@@ -69,6 +71,10 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "getCollateral",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getCollectedOptionsLength",
+    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "getEthPrice",
@@ -87,41 +93,24 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: "getPlayerOptionsLength",
-    values: [string]
-  ): string;
-  encodeFunctionData(
     functionFragment: "getPrice",
-    values: [BigNumberish, BigNumberish]
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "getReadyToCollect",
-    values: [string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getReadyToCollectOption",
-    values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "lastComputedPrice",
     values?: undefined
-  ): string;
-  encodeFunctionData(functionFragment: "lock", values: [BigNumberish]): string;
-  encodeFunctionData(
-    functionFragment: "lockBalances",
-    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "options",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "place",
-    values: [BigNumberish, BigNumberish, boolean, BigNumberish[]]
+    functionFragment: "pendingOptions",
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "playerOptions",
-    values: [string, BigNumberish]
+    functionFragment: "place",
+    values: [BigNumberish, BigNumberish, boolean, boolean]
   ): string;
   encodeFunctionData(
     functionFragment: "rounds",
@@ -129,16 +118,17 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "sell",
-    values: [BigNumberish, boolean, BigNumberish[]]
+    values: [BigNumberish, boolean]
   ): string;
   encodeFunctionData(functionFragment: "token", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "unlock",
-    values: [BigNumberish, BigNumberish[]]
-  ): string;
 
   decodeFunctionResult(functionFragment: "binToEther", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "buy", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "collect", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "collectedOptions",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "ehterToBin", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "executeRound",
@@ -150,6 +140,10 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getCollateral",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getCollectedOptionsLength",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -165,38 +159,20 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     functionFragment: "getPendingOptionsLength",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "getPlayerOptionsLength",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "getPrice", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getReadyToCollect",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "getReadyToCollectOption",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "lastComputedPrice",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "lock", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "lockBalances",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "options", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "place", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "playerOptions",
+    functionFragment: "pendingOptions",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "place", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "rounds", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "sell", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "token", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unlock", data: BytesLike): Result;
 
   events: {
     "Bought(address)": EventFragment;
@@ -213,7 +189,7 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Sold"): EventFragment;
 }
 
-export class BinaryOptions extends Contract {
+export class BinaryOptionsNoLock extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -224,7 +200,7 @@ export class BinaryOptions extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: BinaryOptionsInterface;
+  interface: BinaryOptionsNoLockInterface;
 
   functions: {
     binToEther(
@@ -252,6 +228,26 @@ export class BinaryOptions extends Contract {
       lock: boolean,
       overrides?: PayableOverrides
     ): Promise<ContractTransaction>;
+
+    collect(overrides?: Overrides): Promise<ContractTransaction>;
+
+    "collect()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+    collectedOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: number;
+    }>;
+
+    "collectedOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: number;
+    }>;
 
     ehterToBin(
       amount: BigNumberish,
@@ -298,6 +294,20 @@ export class BinaryOptions extends Contract {
     }>;
 
     "getCollateral()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    getCollectedOptionsLength(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+    }>;
+
+    "getCollectedOptionsLength(address)"(
+      wallet: string,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
@@ -357,106 +367,30 @@ export class BinaryOptions extends Contract {
       0: BigNumber;
     }>;
 
-    getPlayerOptionsLength(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
-    "getPlayerOptionsLength(address)"(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
     getPrice(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
     }>;
 
-    "getPrice(uint256,uint256)"(
+    "getPrice(uint256)"(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
     }>;
 
     getReadyToCollect(
-      wallet: string,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
       1: BigNumber;
     }>;
 
-    "getReadyToCollect(address)"(
-      wallet: string,
+    "getReadyToCollect()"(
       overrides?: CallOverrides
     ): Promise<{
-      0: BigNumber;
-      1: BigNumber;
-    }>;
-
-    getReadyToCollectOption(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
-    "getReadyToCollectOption(address,uint256)"(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
-    lastComputedPrice(
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
-    "lastComputedPrice()"(
-      overrides?: CallOverrides
-    ): Promise<{
-      0: BigNumber;
-    }>;
-
-    lock(
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    "lock(uint256)"(
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    lockBalances(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<{
-      total: BigNumber;
-      available: BigNumber;
-      0: BigNumber;
-      1: BigNumber;
-    }>;
-
-    "lockBalances(address)"(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<{
-      total: BigNumber;
-      available: BigNumber;
       0: BigNumber;
       1: BigNumber;
     }>;
@@ -473,7 +407,6 @@ export class BinaryOptions extends Contract {
       payout: BigNumber;
       buyer: string;
       winner: boolean;
-      executed: boolean;
       0: BigNumber;
       1: boolean;
       2: number;
@@ -482,7 +415,6 @@ export class BinaryOptions extends Contract {
       5: BigNumber;
       6: string;
       7: boolean;
-      8: boolean;
     }>;
 
     "options(uint256)"(
@@ -497,7 +429,6 @@ export class BinaryOptions extends Contract {
       payout: BigNumber;
       buyer: string;
       winner: boolean;
-      executed: boolean;
       0: BigNumber;
       1: boolean;
       2: number;
@@ -506,40 +437,39 @@ export class BinaryOptions extends Contract {
       5: BigNumber;
       6: string;
       7: boolean;
-      8: boolean;
+    }>;
+
+    pendingOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: number;
+    }>;
+
+    "pendingOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: number;
     }>;
 
     place(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
-    "place(uint32,uint256,bool,uint256[])"(
+    "place(uint32,uint256,bool,bool)"(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: Overrides
     ): Promise<ContractTransaction>;
-
-    playerOptions(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: number;
-    }>;
-
-    "playerOptions(address,uint256)"(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<{
-      0: number;
-    }>;
 
     rounds(
       arg0: BigNumberish,
@@ -576,14 +506,12 @@ export class BinaryOptions extends Contract {
     sell(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
-    "sell(uint256,bool,uint256[])"(
+    "sell(uint256,bool)"(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
@@ -598,18 +526,6 @@ export class BinaryOptions extends Contract {
     ): Promise<{
       0: string;
     }>;
-
-    unlock(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
-
-    "unlock(uint256,uint256[])"(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: Overrides
-    ): Promise<ContractTransaction>;
   };
 
   binToEther(
@@ -633,6 +549,22 @@ export class BinaryOptions extends Contract {
     lock: boolean,
     overrides?: PayableOverrides
   ): Promise<ContractTransaction>;
+
+  collect(overrides?: Overrides): Promise<ContractTransaction>;
+
+  "collect()"(overrides?: Overrides): Promise<ContractTransaction>;
+
+  collectedOptions(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<number>;
+
+  "collectedOptions(address,uint256)"(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<number>;
 
   ehterToBin(
     amount: BigNumberish,
@@ -664,6 +596,16 @@ export class BinaryOptions extends Contract {
 
   "getCollateral()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+  getCollectedOptionsLength(
+    wallet: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  "getCollectedOptionsLength(address)"(
+    wallet: string,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   getEthPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
   "getEthPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -694,86 +636,26 @@ export class BinaryOptions extends Contract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  getPlayerOptionsLength(
-    wallet: string,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  "getPlayerOptionsLength(address)"(
-    wallet: string,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   getPrice(
     amountTobuy: BigNumberish,
-    supplyChange: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  "getPrice(uint256,uint256)"(
+  "getPrice(uint256)"(
     amountTobuy: BigNumberish,
-    supplyChange: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
   getReadyToCollect(
-    wallet: string,
     overrides?: CallOverrides
   ): Promise<{
     0: BigNumber;
     1: BigNumber;
   }>;
 
-  "getReadyToCollect(address)"(
-    wallet: string,
+  "getReadyToCollect()"(
     overrides?: CallOverrides
   ): Promise<{
-    0: BigNumber;
-    1: BigNumber;
-  }>;
-
-  getReadyToCollectOption(
-    wallet: string,
-    index: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  "getReadyToCollectOption(address,uint256)"(
-    wallet: string,
-    index: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  lastComputedPrice(overrides?: CallOverrides): Promise<BigNumber>;
-
-  "lastComputedPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
-
-  lock(
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  "lock(uint256)"(
-    amount: BigNumberish,
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  lockBalances(
-    arg0: string,
-    overrides?: CallOverrides
-  ): Promise<{
-    total: BigNumber;
-    available: BigNumber;
-    0: BigNumber;
-    1: BigNumber;
-  }>;
-
-  "lockBalances(address)"(
-    arg0: string,
-    overrides?: CallOverrides
-  ): Promise<{
-    total: BigNumber;
-    available: BigNumber;
     0: BigNumber;
     1: BigNumber;
   }>;
@@ -790,7 +672,6 @@ export class BinaryOptions extends Contract {
     payout: BigNumber;
     buyer: string;
     winner: boolean;
-    executed: boolean;
     0: BigNumber;
     1: boolean;
     2: number;
@@ -799,7 +680,6 @@ export class BinaryOptions extends Contract {
     5: BigNumber;
     6: string;
     7: boolean;
-    8: boolean;
   }>;
 
   "options(uint256)"(
@@ -814,7 +694,6 @@ export class BinaryOptions extends Contract {
     payout: BigNumber;
     buyer: string;
     winner: boolean;
-    executed: boolean;
     0: BigNumber;
     1: boolean;
     2: number;
@@ -823,36 +702,35 @@ export class BinaryOptions extends Contract {
     5: BigNumber;
     6: string;
     7: boolean;
-    8: boolean;
   }>;
+
+  pendingOptions(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<number>;
+
+  "pendingOptions(address,uint256)"(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<number>;
 
   place(
     timeStamp: BigNumberish,
     amount: BigNumberish,
     higher: boolean,
-    collectOptions: BigNumberish[],
+    doCollect: boolean,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
-  "place(uint32,uint256,bool,uint256[])"(
+  "place(uint32,uint256,bool,bool)"(
     timeStamp: BigNumberish,
     amount: BigNumberish,
     higher: boolean,
-    collectOptions: BigNumberish[],
+    doCollect: boolean,
     overrides?: Overrides
   ): Promise<ContractTransaction>;
-
-  playerOptions(
-    arg0: string,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<number>;
-
-  "playerOptions(address,uint256)"(
-    arg0: string,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<number>;
 
   rounds(
     arg0: BigNumberish,
@@ -889,32 +767,18 @@ export class BinaryOptions extends Contract {
   sell(
     amount: BigNumberish,
     fromLock: boolean,
-    collectOptions: BigNumberish[],
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
-  "sell(uint256,bool,uint256[])"(
+  "sell(uint256,bool)"(
     amount: BigNumberish,
     fromLock: boolean,
-    collectOptions: BigNumberish[],
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
   token(overrides?: CallOverrides): Promise<string>;
 
   "token()"(overrides?: CallOverrides): Promise<string>;
-
-  unlock(
-    amount: BigNumberish,
-    collectOptions: BigNumberish[],
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
-
-  "unlock(uint256,uint256[])"(
-    amount: BigNumberish,
-    collectOptions: BigNumberish[],
-    overrides?: Overrides
-  ): Promise<ContractTransaction>;
 
   callStatic: {
     binToEther(
@@ -932,6 +796,22 @@ export class BinaryOptions extends Contract {
     buy(lock: boolean, overrides?: CallOverrides): Promise<void>;
 
     "buy(bool)"(lock: boolean, overrides?: CallOverrides): Promise<void>;
+
+    collect(overrides?: CallOverrides): Promise<void>;
+
+    "collect()"(overrides?: CallOverrides): Promise<void>;
+
+    collectedOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<number>;
+
+    "collectedOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<number>;
 
     ehterToBin(
       amount: BigNumberish,
@@ -963,6 +843,16 @@ export class BinaryOptions extends Contract {
 
     "getCollateral()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    getCollectedOptionsLength(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "getCollectedOptionsLength(address)"(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     getEthPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
     "getEthPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -993,83 +883,26 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    getPlayerOptionsLength(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "getPlayerOptionsLength(address)"(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     getPrice(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    "getPrice(uint256,uint256)"(
+    "getPrice(uint256)"(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getReadyToCollect(
-      wallet: string,
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
       1: BigNumber;
     }>;
 
-    "getReadyToCollect(address)"(
-      wallet: string,
+    "getReadyToCollect()"(
       overrides?: CallOverrides
     ): Promise<{
-      0: BigNumber;
-      1: BigNumber;
-    }>;
-
-    getReadyToCollectOption(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "getReadyToCollectOption(address,uint256)"(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    lastComputedPrice(overrides?: CallOverrides): Promise<BigNumber>;
-
-    "lastComputedPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
-
-    lock(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
-
-    "lock(uint256)"(
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    lockBalances(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<{
-      total: BigNumber;
-      available: BigNumber;
-      0: BigNumber;
-      1: BigNumber;
-    }>;
-
-    "lockBalances(address)"(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<{
-      total: BigNumber;
-      available: BigNumber;
       0: BigNumber;
       1: BigNumber;
     }>;
@@ -1086,7 +919,6 @@ export class BinaryOptions extends Contract {
       payout: BigNumber;
       buyer: string;
       winner: boolean;
-      executed: boolean;
       0: BigNumber;
       1: boolean;
       2: number;
@@ -1095,7 +927,6 @@ export class BinaryOptions extends Contract {
       5: BigNumber;
       6: string;
       7: boolean;
-      8: boolean;
     }>;
 
     "options(uint256)"(
@@ -1110,7 +941,6 @@ export class BinaryOptions extends Contract {
       payout: BigNumber;
       buyer: string;
       winner: boolean;
-      executed: boolean;
       0: BigNumber;
       1: boolean;
       2: number;
@@ -1119,36 +949,35 @@ export class BinaryOptions extends Contract {
       5: BigNumber;
       6: string;
       7: boolean;
-      8: boolean;
     }>;
+
+    pendingOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<number>;
+
+    "pendingOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<number>;
 
     place(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    "place(uint32,uint256,bool,uint256[])"(
+    "place(uint32,uint256,bool,bool)"(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    playerOptions(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<number>;
-
-    "playerOptions(address,uint256)"(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<number>;
 
     rounds(
       arg0: BigNumberish,
@@ -1185,32 +1014,18 @@ export class BinaryOptions extends Contract {
     sell(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
 
-    "sell(uint256,bool,uint256[])"(
+    "sell(uint256,bool)"(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
 
     token(overrides?: CallOverrides): Promise<string>;
 
     "token()"(overrides?: CallOverrides): Promise<string>;
-
-    unlock(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    "unlock(uint256,uint256[])"(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: CallOverrides
-    ): Promise<void>;
   };
 
   filters: {
@@ -1245,6 +1060,22 @@ export class BinaryOptions extends Contract {
       overrides?: PayableOverrides
     ): Promise<BigNumber>;
 
+    collect(overrides?: Overrides): Promise<BigNumber>;
+
+    "collect()"(overrides?: Overrides): Promise<BigNumber>;
+
+    collectedOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "collectedOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     ehterToBin(
       amount: BigNumberish,
       price: BigNumberish,
@@ -1274,6 +1105,16 @@ export class BinaryOptions extends Contract {
     getCollateral(overrides?: CallOverrides): Promise<BigNumber>;
 
     "getCollateral()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getCollectedOptionsLength(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "getCollectedOptionsLength(address)"(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     getEthPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1305,67 +1146,19 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    getPlayerOptionsLength(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "getPlayerOptionsLength(address)"(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     getPrice(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    "getPrice(uint256,uint256)"(
+    "getPrice(uint256)"(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    getReadyToCollect(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    getReadyToCollect(overrides?: CallOverrides): Promise<BigNumber>;
 
-    "getReadyToCollect(address)"(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    getReadyToCollectOption(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "getReadyToCollectOption(address,uint256)"(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    lastComputedPrice(overrides?: CallOverrides): Promise<BigNumber>;
-
-    "lastComputedPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
-
-    lock(amount: BigNumberish, overrides?: Overrides): Promise<BigNumber>;
-
-    "lock(uint256)"(
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    lockBalances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    "lockBalances(address)"(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    "getReadyToCollect()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     options(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1374,32 +1167,32 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    pendingOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "pendingOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     place(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: Overrides
     ): Promise<BigNumber>;
 
-    "place(uint32,uint256,bool,uint256[])"(
+    "place(uint32,uint256,bool,bool)"(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    playerOptions(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    "playerOptions(address,uint256)"(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     rounds(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
@@ -1412,32 +1205,18 @@ export class BinaryOptions extends Contract {
     sell(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: Overrides
     ): Promise<BigNumber>;
 
-    "sell(uint256,bool,uint256[])"(
+    "sell(uint256,bool)"(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: Overrides
     ): Promise<BigNumber>;
 
     token(overrides?: CallOverrides): Promise<BigNumber>;
 
     "token()"(overrides?: CallOverrides): Promise<BigNumber>;
-
-    unlock(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: Overrides
-    ): Promise<BigNumber>;
-
-    "unlock(uint256,uint256[])"(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: Overrides
-    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -1461,6 +1240,22 @@ export class BinaryOptions extends Contract {
     "buy(bool)"(
       lock: boolean,
       overrides?: PayableOverrides
+    ): Promise<PopulatedTransaction>;
+
+    collect(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    "collect()"(overrides?: Overrides): Promise<PopulatedTransaction>;
+
+    collectedOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "collectedOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     ehterToBin(
@@ -1492,6 +1287,16 @@ export class BinaryOptions extends Contract {
     getCollateral(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "getCollateral()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getCollectedOptionsLength(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "getCollectedOptionsLength(address)"(
+      wallet: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     getEthPrice(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -1525,73 +1330,19 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    getPlayerOptionsLength(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "getPlayerOptionsLength(address)"(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     getPrice(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    "getPrice(uint256,uint256)"(
+    "getPrice(uint256)"(
       amountTobuy: BigNumberish,
-      supplyChange: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    getReadyToCollect(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    getReadyToCollect(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    "getReadyToCollect(address)"(
-      wallet: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    getReadyToCollectOption(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "getReadyToCollectOption(address,uint256)"(
-      wallet: string,
-      index: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    lastComputedPrice(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    "lastComputedPrice()"(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    lock(
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    "lock(uint256)"(
-      amount: BigNumberish,
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    lockBalances(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "lockBalances(address)"(
-      arg0: string,
+    "getReadyToCollect()"(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1605,32 +1356,32 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    pendingOptions(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "pendingOptions(address,uint256)"(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     place(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
-    "place(uint32,uint256,bool,uint256[])"(
+    "place(uint32,uint256,bool,bool)"(
       timeStamp: BigNumberish,
       amount: BigNumberish,
       higher: boolean,
-      collectOptions: BigNumberish[],
+      doCollect: boolean,
       overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    playerOptions(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    "playerOptions(address,uint256)"(
-      arg0: string,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     rounds(
@@ -1646,31 +1397,17 @@ export class BinaryOptions extends Contract {
     sell(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
-    "sell(uint256,bool,uint256[])"(
+    "sell(uint256,bool)"(
       amount: BigNumberish,
       fromLock: boolean,
-      collectOptions: BigNumberish[],
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
     token(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "token()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    unlock(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
-
-    "unlock(uint256,uint256[])"(
-      amount: BigNumberish,
-      collectOptions: BigNumberish[],
-      overrides?: Overrides
-    ): Promise<PopulatedTransaction>;
   };
 }

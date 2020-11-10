@@ -45,6 +45,11 @@ const config: HardhatUserConfig = {
       chainId: 42,
       accounts: { mnemonic },
     },
+    fuse: {
+      url: 'https://rpc.fuse.io',
+      chainId: 122,
+      accounts: { mnemonic },
+    }
   },
   solidity: {
     version: '0.6.12',

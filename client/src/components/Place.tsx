@@ -12,13 +12,14 @@ import NesAction from '../shared/components/NesAction';
 import Inline from  '../shared/components/Inline';
 
 import { useBalance, useNeedAllowance, useNeedBalance } from '../shared/hooks/useBinToken';
-import { useGetEthPrice } from '../shared/hooks/usePriceFeed';
+// import { useGetEthPrice } from '../shared/hooks/usePriceFeed';
 import { useHandleChangeWithState } from '../shared/hooks/useHandleChange';
 import { useGetRoundTimestamps, usePayOut, usePlace } from '../shared/hooks/useBinaryOptions';
 
 const Place = () => {
   const balance = useBalance();
-  const { price } = useGetEthPrice() || {};
+  // const { price } = useGetEthPrice() || {};
+  const price = 400;
   const timestamps = useGetRoundTimestamps();
   const place = usePlace();
   const needBalance = useNeedBalance();
