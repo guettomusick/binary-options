@@ -7,9 +7,12 @@ import './BinToken.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/math/Math.sol';
 
+import 'hardhat/console.sol';
+
 contract BinaryOptions {
   //Overflow safe operators
   using SafeMath for uint32;
+  using SafeMath for uint128;
   using SafeMath for uint256;
 
   // Constants
@@ -27,34 +30,31 @@ contract BinaryOptions {
 
   event Bought(address indexed from);
   event Sold(address indexed from);
-  event Place(address indexed from, uint32 timeStamp);
+  event Place(address indexed from, uint64 price, uint32 execute, uint32 payout, uint128 amount, bool higher);
   event Execute(uint32 timeStamp);
   event Collect(address indexed from);
 
   struct Round {
     bool executed; // If the round has been executed
-    uint32 options; // total options placed at round
+    bool hasOptions; // total options placed at round
     uint64 price; // Price at the end of the round
-    uint256 higherAmount;
-    uint256 lowerAmount;
+    uint128 higherAmount;
+    uint128 lowerAmount;
   }
   
   //Options stored in arrays of structs
   struct Option {
     uint64 price; // Price in USD (18 decimal places) when the option was issued
-    bool higher; // Type of higher/lower bet
     uint32 execute; // Unix timeStamp of expiration time
-    uint256 amount; // Amount of tokens the option contract is for
-    uint32 id; // Unique ID of option, also array index
-    uint256 payout; // Payout of winner bet with 3 decimal places
+    uint32 payout; // Payout of winner bet with 3 decimal places
+    uint128 amount; // Amount of tokens the option contract is for
+    bool higher; // Type of higher/lower bet
     address payable buyer; //Buyer of option
-    bool winner;
-    bool executed;
   }
 
   struct LockBalance {
-    uint256 total;
-    uint256 available;
+    uint128 total;
+    uint128 available;
   }
 
   Option[] public options;
@@ -97,7 +97,7 @@ contract BinaryOptions {
       Option storage option = options[player[i]];
       Round storage round = rounds[option.execute];
 
-      if (!round.executed) {
+      if (!round.executed && option.execute > 0) {
         pending++;
       }
     }
@@ -112,7 +112,7 @@ contract BinaryOptions {
       uint256 optionIndex = player[i];
       Option storage option = options[optionIndex];
       Round storage round = rounds[option.execute];
-      if (round.executed && !option.executed && (option.higher ? round.price > option.price : round.price < option.price)) {
+      if (round.executed && option.execute > 0 && (option.higher ? round.price > option.price : round.price < option.price)) {
         if (readyToCollect == index) {
           return int256(optionIndex);
         }
@@ -133,7 +133,7 @@ contract BinaryOptions {
     for (uint256 i=0; i<player.length; i++) {
       Option storage option = options[player[i]];
       Round storage round = rounds[option.execute];
-      if (round.executed && !option.executed && (option.higher ? round.price > option.price : round.price < option.price)) {
+      if (round.executed && option.execute > 0 && (option.higher ? round.price > option.price : round.price < option.price)) {
         readyToCollect++;
         // add amount to total transaction
         amount += option.amount.mul(100000+option.payout).div(100000);
@@ -192,8 +192,8 @@ contract BinaryOptions {
     @dev Returns the token amount from ether using current token price
     @param amount The amount of BIN tokens to buy
    */
-  function ehterToBin(uint256 amount, uint256 price) public pure returns(uint256) {
-    return amount.mul(1 ether).div(price);
+  function ehterToBin(uint256 amount, uint256 price) public pure returns(uint128) {
+    return uint128(amount.mul(1 ether).div(price));
   }
 
   /**
@@ -201,15 +201,15 @@ contract BinaryOptions {
     @param amount The amount to convert
     @param price The price of the token
    */
-  function binToEther(uint256 amount, uint256 price) public pure returns(uint256) {
-    return amount.mul(price).div(1 ether);
+  function binToEther(uint256 amount, uint256 price) public pure returns(uint128) {
+    return uint128(amount.mul(price).div(1 ether));
   }
 
   /**
     @dev Returns the payout at a given timestamp
     @param timeStamp The timestamp at which to get the payout
    */
-  function getPayOut(uint32 timeStamp, bool higher) public view returns(uint256) {
+  function getPayOut(uint32 timeStamp, bool higher) public view returns(uint32) {
     // TODO Get an accurate dynamic payout
     return 80000;
   }
@@ -249,17 +249,16 @@ contract BinaryOptions {
       LockBalance storage lockBalance = lockBalances[msg.sender];
       require(lockBalance.available >= amount, "Not enough balance");
 
-      lockBalance.available -= amount;
-
       uint256 balance = token.balanceOf(address(this));
       uint256 burn;
       uint256 totalBurn;
 
-      if (lockBalance.available == 0) {
+      if (lockBalance.available - amount == 0) {
         burn = lockBalance.total > amount ? lockBalance.total - amount : lockBalance.total;
-        lockBalance.total = 0;
+        delete lockBalances[msg.sender];
       } else {
-        lockBalance.total = lockBalance.total > amount ? lockBalance.total - amount : 0;
+        lockBalance.available -= uint128(amount);
+        lockBalance.total = uint128(lockBalance.total > amount ? lockBalance.total - amount : 0);
       }
 
       uint256 finalBalance = amount > balance ? 0 : balance - amount;
@@ -312,32 +311,32 @@ contract BinaryOptions {
     LockBalance storage balance = lockBalances[msg.sender];
     require(balance.available >= amount, "Not enough locked balance");
     
-    balance.available -= amount;
+    balance.available -= uint128(amount);
 
     Round storage round = rounds[timeStamp];
     // Keep track of total higher and lower bets for future reference
     if (higher) {
-      round.higherAmount += amount;
+      round.higherAmount += uint128(amount);
     } else {
-      round.lowerAmount += amount;
+      round.lowerAmount += uint128(amount);
     }
-    round.options++;
+    if (!round.hasOptions) {
+      round.hasOptions = true;
+    }
 
     // Save option and index of option on round and pending
-    uint32 index = uint32(options.length);
-    playerOptions[msg.sender].push(index);
+    uint64 price = getEthPrice();
+    uint32 payout = getPayOut(timeStamp, higher);
+    playerOptions[msg.sender].push(uint32(options.length));
     options.push(Option(
-      getEthPrice(),
-      higher,
+      price,
       timeStamp,
-      amount,
-      index,
-      getPayOut(timeStamp, higher),
-      msg.sender,
-      false,
-      false
+      payout,
+      uint128(amount),
+      higher,
+      msg.sender
     ));
-    emit Place(msg.sender, timeStamp);
+    emit Place(msg.sender, price, timeStamp, payout, uint128(amount), higher);
   }
 
   /**
@@ -349,7 +348,7 @@ contract BinaryOptions {
     require(msg.sender == owner, "Only owner can execute round");
     require(timeStamp <= now, "Can't execute a future round");
     require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
-    require(round.options > 0, "No data for current round");
+    require(round.hasOptions, "No data for current round");
     require(!round.executed, "Round already executed");
 
     // Marks round as executed and set price feed
@@ -364,6 +363,7 @@ contract BinaryOptions {
    */
   function collect(uint256[] calldata collectOptions) internal {
     LockBalance storage balance = lockBalances[msg.sender];
+    uint128 collectedAmount;
 
     for (uint256 i; i<collectOptions.length; i++) {
       uint256 index = collectOptions[i];
@@ -377,11 +377,14 @@ contract BinaryOptions {
         bool winner = option.higher ? round.price > option.price : round.price < option.price;
         if (winner) {
           // add amount to total transaction
-          balance.available += option.amount.mul(100000+option.payout).div(100000);
-          option.winner = true;
+          collectedAmount += uint128(option.amount.mul(100000+option.payout).div(100000));
         }
-        option.executed = true;
+        delete options[index];
       }
+    }
+
+    if (collectedAmount > 0) {
+      balance.available += collectedAmount;
     }
   }
 
@@ -391,21 +394,21 @@ contract BinaryOptions {
     LockBalance storage lockBalance = lockBalances[msg.sender];
     require(lockBalance.available >= amount, "Not enough balance");
 
-    lockBalance.available -= amount;
-
     uint256 balance = token.balanceOf(address(this));
     if (balance < amount) {
       // Not enough balance, we mint new tokens to pay the bets
       token.mint(address(this), amount.sub(balance));
-      lockBalance.total = lockBalance.total > amount ? lockBalance.total - amount : 0;
+      lockBalance.available -= uint128(amount);
+      lockBalance.total = uint128(lockBalance.total > amount ? lockBalance.total - amount : 0);
     } else {
-      if (lockBalance.available == 0) {
+      if (lockBalance.available - amount == 0) {
         uint256 burn = lockBalance.total > amount ? lockBalance.total - amount : lockBalance.total;
-        lockBalance.total = 0;
+        delete lockBalances[msg.sender];
         // Player quitting, burning excess
         token.burnFrom(address(this), burn > (balance-amount) ? balance-amount : burn);
       } else {
-        lockBalance.total = lockBalance.total > amount ? lockBalance.total - amount : 0;
+        lockBalance.available -= uint128(amount);
+        lockBalance.total = uint128(lockBalance.total > amount ? lockBalance.total - amount : 0);
       }
     }
     // Send the total amount to the player
@@ -420,7 +423,7 @@ contract BinaryOptions {
     
     token.transferFrom(msg.sender, address(this), amount);
 
-    lockBalances[msg.sender].total += amount;
-    lockBalances[msg.sender].available += amount;
+    lockBalances[msg.sender].total += uint128(amount);
+    lockBalances[msg.sender].available += uint128(amount);
   }
 }

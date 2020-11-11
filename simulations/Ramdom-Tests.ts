@@ -136,7 +136,7 @@ describe('BinaryOptions', function() {
       if (readyToCollectOption >= 0) {
         const option = await binaryOptions.options(readyToCollectOption);
         const round = await binaryOptions.rounds(option.execute);
-        if (round.executed && !option.executed && (option.higher ? option.price.gt(round.price) : option.price.lt(round.price))) {
+        if (round.executed && option.execute > 0 && (option.higher ? option.price.gt(round.price) : option.price.lt(round.price))) {
           collectIndexes.push(readyToCollectOption);
         }
       }
@@ -176,7 +176,7 @@ describe('BinaryOptions', function() {
       await goToNextRound();
       ethPrice += (Math.random()-.5)*ethPrice*randomParams.maxPriceVariation;
       const round = await binaryOptions.rounds(getLastRound());
-      if (round.options > 0) {
+      if (round.hasOptions) {
         await EthPriceFeed.mock.latestRoundData.returns(0, getEther(ethPrice), getLastRound(), getLastRound(), 0);
         await binaryOptions.connect(owner).executeRound(getLastRound());
       }
@@ -198,7 +198,7 @@ describe('BinaryOptions', function() {
       await goToNextRound();
       ethPrice += (Math.random()-.5)*ethPrice*randomParams.maxPriceVariation;
       const round = await binaryOptions.rounds(getLastRound());
-      if (round.options > 0) {
+      if (round.hasOptions) {
         await EthPriceFeed.mock.latestRoundData.returns(0, getEther(ethPrice), getLastRound(), getLastRound(), 0);
         await binaryOptions.connect(owner).executeRound(getLastRound());
       }

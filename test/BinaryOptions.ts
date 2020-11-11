@@ -337,7 +337,6 @@ describe('BinaryOptions', function() {
         expect(options.amount).to.equal(getTokens(bet));
         expect(options.payout).to.equal(DEF_PAYOUT);
         expect(options.buyer).to.equal(address.sender);
-        expect(options.winner).to.equal(false);
         expect(readyToCollect[0]).to.equal(0);
         expect(readyToCollect[1]).to.equal(0);
       });
@@ -353,7 +352,7 @@ describe('BinaryOptions', function() {
 
         expect(round.higherAmount).to.equal(getTokens(.25));
         expect(round.lowerAmount).to.equal(getTokens(.75));
-        expect(round.options).to.equal(2);
+        expect(round.hasOptions).to.equal(true);
       });
     });
 

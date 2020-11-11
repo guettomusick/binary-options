@@ -1,6 +1,8 @@
 import '@nomiclabs/hardhat-waffle';
 import 'hardhat-gas-reporter';
 import 'hardhat-typechain';
+import 'hardhat-contract-sizer';
+import {removeConsoleLog} from 'hardhat-preprocessor';
 
 import { task, HardhatUserConfig } from 'hardhat/config';
 import * as fs from 'fs';
@@ -56,7 +58,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
+        runs: 10000
       }
     }
   },
@@ -73,6 +75,14 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: 'client/src/shared/types/typechain',
     target: 'ethers-v5',
+  },
+  preprocess: {
+    eachLine: removeConsoleLog((bre) => bre.network.name !== 'hardhat' && bre.network.name !== 'localhost'),
+  },
+  contractSizer: {
+    alphaSort: false,
+    runOnCompile: true,
+    disambiguatePaths: false,
   },
 };
 

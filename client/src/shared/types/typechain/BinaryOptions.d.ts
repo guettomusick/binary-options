@@ -202,7 +202,7 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     "Bought(address)": EventFragment;
     "Collect(address)": EventFragment;
     "Execute(uint32)": EventFragment;
-    "Place(address,uint32)": EventFragment;
+    "Place(address,uint64,uint32,uint32,uint128,bool)": EventFragment;
     "Sold(address)": EventFragment;
   };
 
@@ -332,7 +332,7 @@ export class BinaryOptions extends Contract {
       higher: boolean,
       overrides?: CallOverrides
     ): Promise<{
-      0: BigNumber;
+      0: number;
     }>;
 
     "getPayOut(uint32,bool)"(
@@ -340,7 +340,7 @@ export class BinaryOptions extends Contract {
       higher: boolean,
       overrides?: CallOverrides
     ): Promise<{
-      0: BigNumber;
+      0: number;
     }>;
 
     getPendingOptionsLength(
@@ -466,23 +466,17 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       price: BigNumber;
-      higher: boolean;
       execute: number;
+      payout: number;
       amount: BigNumber;
-      id: number;
-      payout: BigNumber;
+      higher: boolean;
       buyer: string;
-      winner: boolean;
-      executed: boolean;
       0: BigNumber;
-      1: boolean;
+      1: number;
       2: number;
       3: BigNumber;
-      4: number;
-      5: BigNumber;
-      6: string;
-      7: boolean;
-      8: boolean;
+      4: boolean;
+      5: string;
     }>;
 
     "options(uint256)"(
@@ -490,23 +484,17 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       price: BigNumber;
-      higher: boolean;
       execute: number;
+      payout: number;
       amount: BigNumber;
-      id: number;
-      payout: BigNumber;
+      higher: boolean;
       buyer: string;
-      winner: boolean;
-      executed: boolean;
       0: BigNumber;
-      1: boolean;
+      1: number;
       2: number;
       3: BigNumber;
-      4: number;
-      5: BigNumber;
-      6: string;
-      7: boolean;
-      8: boolean;
+      4: boolean;
+      5: string;
     }>;
 
     place(
@@ -546,12 +534,12 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       executed: boolean;
-      options: number;
+      hasOptions: boolean;
       price: BigNumber;
       higherAmount: BigNumber;
       lowerAmount: BigNumber;
       0: boolean;
-      1: number;
+      1: boolean;
       2: BigNumber;
       3: BigNumber;
       4: BigNumber;
@@ -562,12 +550,12 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       executed: boolean;
-      options: number;
+      hasOptions: boolean;
       price: BigNumber;
       higherAmount: BigNumber;
       lowerAmount: BigNumber;
       0: boolean;
-      1: number;
+      1: boolean;
       2: BigNumber;
       3: BigNumber;
       4: BigNumber;
@@ -676,13 +664,13 @@ export class BinaryOptions extends Contract {
     timeStamp: BigNumberish,
     higher: boolean,
     overrides?: CallOverrides
-  ): Promise<BigNumber>;
+  ): Promise<number>;
 
   "getPayOut(uint32,bool)"(
     timeStamp: BigNumberish,
     higher: boolean,
     overrides?: CallOverrides
-  ): Promise<BigNumber>;
+  ): Promise<number>;
 
   getPendingOptionsLength(
     wallet: string,
@@ -783,23 +771,17 @@ export class BinaryOptions extends Contract {
     overrides?: CallOverrides
   ): Promise<{
     price: BigNumber;
-    higher: boolean;
     execute: number;
+    payout: number;
     amount: BigNumber;
-    id: number;
-    payout: BigNumber;
+    higher: boolean;
     buyer: string;
-    winner: boolean;
-    executed: boolean;
     0: BigNumber;
-    1: boolean;
+    1: number;
     2: number;
     3: BigNumber;
-    4: number;
-    5: BigNumber;
-    6: string;
-    7: boolean;
-    8: boolean;
+    4: boolean;
+    5: string;
   }>;
 
   "options(uint256)"(
@@ -807,23 +789,17 @@ export class BinaryOptions extends Contract {
     overrides?: CallOverrides
   ): Promise<{
     price: BigNumber;
-    higher: boolean;
     execute: number;
+    payout: number;
     amount: BigNumber;
-    id: number;
-    payout: BigNumber;
+    higher: boolean;
     buyer: string;
-    winner: boolean;
-    executed: boolean;
     0: BigNumber;
-    1: boolean;
+    1: number;
     2: number;
     3: BigNumber;
-    4: number;
-    5: BigNumber;
-    6: string;
-    7: boolean;
-    8: boolean;
+    4: boolean;
+    5: string;
   }>;
 
   place(
@@ -859,12 +835,12 @@ export class BinaryOptions extends Contract {
     overrides?: CallOverrides
   ): Promise<{
     executed: boolean;
-    options: number;
+    hasOptions: boolean;
     price: BigNumber;
     higherAmount: BigNumber;
     lowerAmount: BigNumber;
     0: boolean;
-    1: number;
+    1: boolean;
     2: BigNumber;
     3: BigNumber;
     4: BigNumber;
@@ -875,12 +851,12 @@ export class BinaryOptions extends Contract {
     overrides?: CallOverrides
   ): Promise<{
     executed: boolean;
-    options: number;
+    hasOptions: boolean;
     price: BigNumber;
     higherAmount: BigNumber;
     lowerAmount: BigNumber;
     0: boolean;
-    1: number;
+    1: boolean;
     2: BigNumber;
     3: BigNumber;
     4: BigNumber;
@@ -975,13 +951,13 @@ export class BinaryOptions extends Contract {
       timeStamp: BigNumberish,
       higher: boolean,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<number>;
 
     "getPayOut(uint32,bool)"(
       timeStamp: BigNumberish,
       higher: boolean,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<number>;
 
     getPendingOptionsLength(
       wallet: string,
@@ -1079,23 +1055,17 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       price: BigNumber;
-      higher: boolean;
       execute: number;
+      payout: number;
       amount: BigNumber;
-      id: number;
-      payout: BigNumber;
+      higher: boolean;
       buyer: string;
-      winner: boolean;
-      executed: boolean;
       0: BigNumber;
-      1: boolean;
+      1: number;
       2: number;
       3: BigNumber;
-      4: number;
-      5: BigNumber;
-      6: string;
-      7: boolean;
-      8: boolean;
+      4: boolean;
+      5: string;
     }>;
 
     "options(uint256)"(
@@ -1103,23 +1073,17 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       price: BigNumber;
-      higher: boolean;
       execute: number;
+      payout: number;
       amount: BigNumber;
-      id: number;
-      payout: BigNumber;
+      higher: boolean;
       buyer: string;
-      winner: boolean;
-      executed: boolean;
       0: BigNumber;
-      1: boolean;
+      1: number;
       2: number;
       3: BigNumber;
-      4: number;
-      5: BigNumber;
-      6: string;
-      7: boolean;
-      8: boolean;
+      4: boolean;
+      5: string;
     }>;
 
     place(
@@ -1155,12 +1119,12 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       executed: boolean;
-      options: number;
+      hasOptions: boolean;
       price: BigNumber;
       higherAmount: BigNumber;
       lowerAmount: BigNumber;
       0: boolean;
-      1: number;
+      1: boolean;
       2: BigNumber;
       3: BigNumber;
       4: BigNumber;
@@ -1171,12 +1135,12 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       executed: boolean;
-      options: number;
+      hasOptions: boolean;
       price: BigNumber;
       higherAmount: BigNumber;
       lowerAmount: BigNumber;
       0: boolean;
-      1: number;
+      1: boolean;
       2: BigNumber;
       3: BigNumber;
       4: BigNumber;
@@ -1220,7 +1184,14 @@ export class BinaryOptions extends Contract {
 
     Execute(timeStamp: null): EventFilter;
 
-    Place(from: string | null, timeStamp: null): EventFilter;
+    Place(
+      from: string | null,
+      price: null,
+      execute: null,
+      payout: null,
+      amount: null,
+      higher: null
+    ): EventFilter;
 
     Sold(from: string | null): EventFilter;
   };
