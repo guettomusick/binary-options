@@ -54,7 +54,6 @@ export type Round = {
 export type Options = {
   pending: Option[],
   readyToCollect: Option[],
-  collected: Option[],
 };
 
 export type Summary = {
@@ -77,7 +76,6 @@ const initialState: BinaryOptionsStore = {
   options: {
     pending: [],
     readyToCollect: [],
-    collected: [],
   },
   summary: {},
   payouts: {},

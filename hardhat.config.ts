@@ -1,6 +1,7 @@
 import '@nomiclabs/hardhat-waffle';
 import 'hardhat-gas-reporter';
 import 'hardhat-typechain';
+import 'hardhat-spdx-license-identifier';
 import 'hardhat-contract-sizer';
 import {removeConsoleLog} from 'hardhat-preprocessor';
 
@@ -54,13 +55,23 @@ const config: HardhatUserConfig = {
     }
   },
   solidity: {
-    version: '0.6.12',
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 10000
+    compilers: [{
+      version: '0.6.12',
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 10000
+        }
       }
-    }
+    },{
+      version: '0.5.16',
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 10000
+        }
+      }
+    }]
   },
   paths: {
     sources: './contracts',
@@ -83,6 +94,10 @@ const config: HardhatUserConfig = {
     alphaSort: false,
     runOnCompile: true,
     disambiguatePaths: false,
+  },
+  spdxLicenseIdentifier: {
+    overwrite: true,
+    runOnCompile: true,
   },
 };
 

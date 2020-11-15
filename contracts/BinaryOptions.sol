@@ -1,32 +1,37 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: ISC
+
 pragma solidity >=0.6.0 <0.8.0;
 
-import './LinkTokenInterface.sol';
-import './AggregatorV3Interface.sol';
 import './BinToken.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/math/Math.sol';
 
-import 'hardhat/console.sol';
+import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
+import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 
 contract BinaryOptions {
   //Overflow safe operators
   using SafeMath for uint32;
   using SafeMath for uint128;
   using SafeMath for uint256;
+  using FixedPoint for *;
 
   // Constants
   uint256 constant interval = 10 minutes;
   uint256 constant MAX_INT = 2**256 - 1;
 
-  address private owner;
-  uint256 public lastComputedPrice = 0.0001 ether;
-  
-  //Pricefeed interfaces
-  AggregatorV3Interface internal ethFeed;
-  uint256 ethPrice;
+  address private immutable owner;
+  uint256 public lastComputedPrice;
 
-  BinToken public token;
+  BinToken public immutable token;
+
+  IUniswapV2Pair immutable pair;
+  struct FeedPrice {
+    uint256 lastPrice0Cumulative;
+    uint32 lastBlockTimestamp;
+    uint64 lastPrice;
+  }
+  FeedPrice public feedPrice;
 
   event Bought(address indexed from);
   event Sold(address indexed from);
@@ -63,12 +68,22 @@ contract BinaryOptions {
   mapping(address => LockBalance) public lockBalances;
 
   //Kovan feeds: https://docs.chain.link/docs/reference-contracts
-  constructor(address ethFeedAddress) public {
-    token = new BinToken();
-    token.approve(address(this), MAX_INT);
+  constructor(address pairAddress) public {
+    BinToken _token = new BinToken();
+    token = _token;
 
-    //ETH/USD Kovan feed
-    ethFeed = AggregatorV3Interface(ethFeedAddress);
+    _token.approve(address(this), MAX_INT);
+
+    IUniswapV2Pair _pair = IUniswapV2Pair(pairAddress);
+    pair = _pair;
+
+    // blockTimestampLast = uint32(block.timestamp % 2 ** 32);
+    // On main net we can use block.timestamp
+    (, , uint32 _blockTimestampLast) = _pair.getReserves();
+    feedPrice.lastBlockTimestamp = _blockTimestampLast;
+    feedPrice.lastPrice0Cumulative = _pair.price0CumulativeLast();
+
+    lastComputedPrice = 0.0001 ether;
 
     owner = msg.sender;
   }
@@ -143,16 +158,41 @@ contract BinaryOptions {
     return (readyToCollect, amount);
   }
 
-  /**
-    @dev Returns the latest ETH price
-   */ 
-  function getEthPrice() public view returns (uint64) {
-    ( , int price, , uint256 timeStamp, ) = ethFeed.latestRoundData();
-    // If the round is not complete yet, timeStamp is 0
-    require(timeStamp > 0, 'Round not complete');
-    //Price should never be negative thus cast int to unit is ok
-    //Price is 8 decimal places and will require 1e10 correction later to 18 places
-    return uint64(price);
+  function currentCumulativePrices() internal view returns (uint256 price0Cumulative, uint32 blockTimestamp) {
+        blockTimestamp = uint32(block.timestamp % 2 ** 32);
+        price0Cumulative = pair.price0CumulativeLast();
+
+        // if time has elapsed since the last update on the pair, mock the accumulated price values
+        (uint112 reserve0, uint112 reserve1, uint32 _blockTimestampLast) = pair.getReserves();
+        if (_blockTimestampLast != blockTimestamp) {
+            // subtraction overflow is desired
+            uint32 timeElapsed = blockTimestamp - _blockTimestampLast;
+            // addition overflow is desired
+            // counterfactual
+            price0Cumulative += uint(FixedPoint.fraction(reserve1, reserve0)._x) * timeElapsed;
+        }
+    }
+
+  function getEthPrice() public view returns (uint64, uint256, uint32) {
+    (uint256 price0Cumulative , uint32 blockTimestamp) = currentCumulativePrices();
+    
+    uint32 timeElapsed = blockTimestamp - feedPrice.lastBlockTimestamp;
+    if (timeElapsed == 0) {
+      return (
+        feedPrice.lastPrice,
+        price0Cumulative,
+        blockTimestamp
+      );
+    }
+
+    FixedPoint.uq112x112 memory price0Average =
+      FixedPoint.uq112x112(uint224((price0Cumulative - feedPrice.lastPrice0Cumulative) / timeElapsed));
+
+    return (
+      uint64(price0Average.mul(1000000000).decode144()),
+      price0Cumulative,
+      blockTimestamp
+    );
   }
 
   /**
@@ -325,18 +365,18 @@ contract BinaryOptions {
     }
 
     // Save option and index of option on round and pending
-    uint64 price = getEthPrice();
+    updateEthPrice();
     uint32 payout = getPayOut(timeStamp, higher);
     playerOptions[msg.sender].push(uint32(options.length));
     options.push(Option(
-      price,
+      feedPrice.lastPrice,
       timeStamp,
       payout,
       uint128(amount),
       higher,
       msg.sender
     ));
-    emit Place(msg.sender, price, timeStamp, payout, uint128(amount), higher);
+    emit Place(msg.sender, feedPrice.lastPrice, timeStamp, payout, uint128(amount), higher);
   }
 
   /**
@@ -352,9 +392,21 @@ contract BinaryOptions {
     require(!round.executed, "Round already executed");
 
     // Marks round as executed and set price feed
+    updateEthPrice();
     round.executed = true;
-    round.price = getEthPrice();
+    round.price = feedPrice.lastPrice;
+
     emit Execute(timeStamp);
+  }
+
+  function updateEthPrice() internal {
+    (uint64 price, uint256 price0Cumulative , uint32 blockTimestamp) = getEthPrice();
+
+    if (feedPrice.lastBlockTimestamp < blockTimestamp) {
+      feedPrice.lastBlockTimestamp = blockTimestamp;
+      feedPrice.lastPrice0Cumulative = price0Cumulative;
+      feedPrice.lastPrice = price;
+    }
   }
 
   /**

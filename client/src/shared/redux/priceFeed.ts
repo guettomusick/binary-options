@@ -1,10 +1,9 @@
-import { Contract } from '@ethersproject/contracts';
-
 import { Action } from './types';
+import { UniswapV2Pair } from '../types/typechain';
 
 // actions
 const SET_PRICE_FEED_CONTRACT = 'SET_PRICE_FEED_CONTRACT';
-export const setContract = (contract: Contract) => ({ type: SET_PRICE_FEED_CONTRACT, payload: contract });
+export const setContract = (contract: UniswapV2Pair) => ({ type: SET_PRICE_FEED_CONTRACT, payload: contract });
 
 const SET_PRICE_FEED_ETH_PRICE = 'SET_PRICE_FEED_ETH_PRICE';
 export const setPrice = (price: Price) => ({ type: SET_PRICE_FEED_ETH_PRICE, payload: price });
@@ -15,7 +14,7 @@ type Price = {
 };
 
 export type PriceFeedStore = {
-  contract?: Contract,
+  contract?: UniswapV2Pair,
   current?: Price,
 }
 
@@ -29,7 +28,7 @@ const priceFeed = (state = initialState, action: Action<any>) => {
     case SET_PRICE_FEED_CONTRACT:
       return {
         ...state,
-        contract: payload as Contract,
+        contract: payload as UniswapV2Pair,
       };
     case SET_PRICE_FEED_ETH_PRICE:
       return {

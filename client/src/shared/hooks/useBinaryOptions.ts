@@ -18,7 +18,7 @@ export const useGetPrice = () => {
   
   const getPrice = useCallback(() => {
     if (contract) {
-      contract.getPrice(0)
+      contract.getPrice(0, 0)
         .then((price: BigNumber) => dispatch(setPrice(+ethers.utils.formatEther(price || 0))))
         .catch(console.error);
     }
@@ -37,11 +37,9 @@ export const useGetOptions = () => {
       try {
         const address = await signer.getAddress();
         const pendingOptionsLength = (await contract.getPendingOptionsLength(address)).toNumber();
-        const collectedOptionsLength = (await contract.getCollectedOptionsLength(address)).toNumber();
 
         const pendingOptions = [];
         const readyToCollectOptions = [];
-        const collectedOptions = [];
 
         for (let i=0; i<pendingOptionsLength; i++) {
           const optionIndex = await contract.pendingOptions(address, i);
@@ -53,11 +51,6 @@ export const useGetOptions = () => {
           } else {
             pendingOptions.push(option);
           }
-        }
-        for (let i=0; i<collectedOptionsLength; i++) {
-          const optionIndex = await contract.collectedOptions(address, i);
-          const option = await contract.options(optionIndex);
-          collectedOptions.push(option);
         }
 
         const optionsAdapter = (option: any): Option => ({
@@ -74,7 +67,6 @@ export const useGetOptions = () => {
         dispatch(setOptions({
           pending: pendingOptions.map(optionsAdapter),
           readyToCollect: readyToCollectOptions.map(optionsAdapter),
-          collected: collectedOptions.map(optionsAdapter),
         }));
       } catch (error) {
         console.error(error);
@@ -93,7 +85,7 @@ export const useGetSummary = () => {
   const getSummary = useCallback(async () => {
     if (contract && signer) {
       const address = await signer.getAddress();
-      const { 0: readyToCollectLength, 1: amount} = await contract.getReadyToCollect();
+      const { 0: readyToCollectLength, 1: amount} = await contract.getReadyToCollect(address);
       const pendingLength = await contract.getPendingOptionsLength(address);
 
       dispatch(setSummary({
@@ -243,7 +235,7 @@ export const useSell = () => {
       if (contract && getBalance) {
         try {
           show();
-          const tx = await contract.sell(ethers.utils.parseEther(amount), false);
+          const tx = await contract.sell(ethers.utils.parseEther(amount), false, []);
           const receipt = await tx.wait();
           await getBalance();
           return { tx, receipt };
@@ -286,7 +278,7 @@ export const usePlace = () => {
       if (contract) {
         try {
           show();
-          const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher, false);
+          const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher, []);
           const receipt = await tx.wait();
           await update(timestamp);
           return { tx, receipt };

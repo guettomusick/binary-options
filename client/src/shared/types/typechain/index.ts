@@ -5,7 +5,11 @@ export { ERC20PresetMinterPauserFactory } from "./ERC20PresetMinterPauserFactory
 export type { ERC20PresetMinterPauser } from "./ERC20PresetMinterPauser";
 export { ERC20Factory } from "./ERC20Factory";
 export type { ERC20 } from "./ERC20";
+export { UniswapV2ERC20Factory } from "./UniswapV2ERC20Factory";
+export type { UniswapV2ERC20 } from "./UniswapV2ERC20";
 export { BinaryOptionsFactory } from "./BinaryOptionsFactory";
 export type { BinaryOptions } from "./BinaryOptions";
 export { BinTokenFactory } from "./BinTokenFactory";
 export type { BinToken } from "./BinToken";
+export { UniswapV2PairFactory } from "./UniswapV2PairFactory";
+export type { UniswapV2Pair } from "./UniswapV2Pair";

@@ -27,6 +27,7 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     "buy(bool)": FunctionFragment;
     "ehterToBin(uint256,uint256)": FunctionFragment;
     "executeRound(uint32)": FunctionFragment;
+    "feedPrice()": FunctionFragment;
     "getBinSupply()": FunctionFragment;
     "getCollateral()": FunctionFragment;
     "getEthPrice()": FunctionFragment;
@@ -62,6 +63,7 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     functionFragment: "executeRound",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "feedPrice", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getBinSupply",
     values?: undefined
@@ -144,6 +146,7 @@ interface BinaryOptionsInterface extends ethers.utils.Interface {
     functionFragment: "executeRound",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "feedPrice", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getBinSupply",
     data: BytesLike
@@ -279,6 +282,28 @@ export class BinaryOptions extends Contract {
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
+    feedPrice(
+      overrides?: CallOverrides
+    ): Promise<{
+      lastPrice0Cumulative: BigNumber;
+      lastBlockTimestamp: number;
+      lastPrice: BigNumber;
+      0: BigNumber;
+      1: number;
+      2: BigNumber;
+    }>;
+
+    "feedPrice()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      lastPrice0Cumulative: BigNumber;
+      lastBlockTimestamp: number;
+      lastPrice: BigNumber;
+      0: BigNumber;
+      1: number;
+      2: BigNumber;
+    }>;
+
     getBinSupply(
       overrides?: CallOverrides
     ): Promise<{
@@ -307,12 +332,16 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
+      1: BigNumber;
+      2: number;
     }>;
 
     "getEthPrice()"(
       overrides?: CallOverrides
     ): Promise<{
       0: BigNumber;
+      1: BigNumber;
+      2: number;
     }>;
 
     getOptionsLength(
@@ -644,6 +673,28 @@ export class BinaryOptions extends Contract {
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
+  feedPrice(
+    overrides?: CallOverrides
+  ): Promise<{
+    lastPrice0Cumulative: BigNumber;
+    lastBlockTimestamp: number;
+    lastPrice: BigNumber;
+    0: BigNumber;
+    1: number;
+    2: BigNumber;
+  }>;
+
+  "feedPrice()"(
+    overrides?: CallOverrides
+  ): Promise<{
+    lastPrice0Cumulative: BigNumber;
+    lastBlockTimestamp: number;
+    lastPrice: BigNumber;
+    0: BigNumber;
+    1: number;
+    2: BigNumber;
+  }>;
+
   getBinSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
   "getBinSupply()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -652,9 +703,21 @@ export class BinaryOptions extends Contract {
 
   "getCollateral()"(overrides?: CallOverrides): Promise<BigNumber>;
 
-  getEthPrice(overrides?: CallOverrides): Promise<BigNumber>;
+  getEthPrice(
+    overrides?: CallOverrides
+  ): Promise<{
+    0: BigNumber;
+    1: BigNumber;
+    2: number;
+  }>;
 
-  "getEthPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
+  "getEthPrice()"(
+    overrides?: CallOverrides
+  ): Promise<{
+    0: BigNumber;
+    1: BigNumber;
+    2: number;
+  }>;
 
   getOptionsLength(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -931,6 +994,28 @@ export class BinaryOptions extends Contract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    feedPrice(
+      overrides?: CallOverrides
+    ): Promise<{
+      lastPrice0Cumulative: BigNumber;
+      lastBlockTimestamp: number;
+      lastPrice: BigNumber;
+      0: BigNumber;
+      1: number;
+      2: BigNumber;
+    }>;
+
+    "feedPrice()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      lastPrice0Cumulative: BigNumber;
+      lastBlockTimestamp: number;
+      lastPrice: BigNumber;
+      0: BigNumber;
+      1: number;
+      2: BigNumber;
+    }>;
+
     getBinSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
     "getBinSupply()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -939,9 +1024,21 @@ export class BinaryOptions extends Contract {
 
     "getCollateral()"(overrides?: CallOverrides): Promise<BigNumber>;
 
-    getEthPrice(overrides?: CallOverrides): Promise<BigNumber>;
+    getEthPrice(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+      1: BigNumber;
+      2: number;
+    }>;
 
-    "getEthPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
+    "getEthPrice()"(
+      overrides?: CallOverrides
+    ): Promise<{
+      0: BigNumber;
+      1: BigNumber;
+      2: number;
+    }>;
 
     getOptionsLength(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1238,6 +1335,10 @@ export class BinaryOptions extends Contract {
       overrides?: Overrides
     ): Promise<BigNumber>;
 
+    feedPrice(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "feedPrice()"(overrides?: CallOverrides): Promise<BigNumber>;
+
     getBinSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
     "getBinSupply()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1455,6 +1556,10 @@ export class BinaryOptions extends Contract {
       timeStamp: BigNumberish,
       overrides?: Overrides
     ): Promise<PopulatedTransaction>;
+
+    feedPrice(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "feedPrice()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getBinSupply(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

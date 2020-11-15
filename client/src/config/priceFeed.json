@@ -1,14 +1,14 @@
 {
   "1": {
-    "eth": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    "eth_dai": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11"
   },
   "4": {
-    "eth": "0x8A753747A1Fa494EC906cE90E9f37563A8AF630e"
+    "eth_dai": "0x8B22F85d0c844Cf793690F6D9DFE9F11Ddb35449"
   },
   "42": {
-    "eth": "0x9326BFA02ADD2366b30bacB125260Af641031331"
+    "eth_dai": ""
   },
   "1337": {
-    "eth": "0x8A753747A1Fa494EC906cE90E9f37563A8AF630e"
+    "eth_dai": ""
   }
 }

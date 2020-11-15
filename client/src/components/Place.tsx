@@ -12,14 +12,13 @@ import NesAction from '../shared/components/NesAction';
 import Inline from  '../shared/components/Inline';
 
 import { useBalance, useNeedAllowance, useNeedBalance } from '../shared/hooks/useBinToken';
-// import { useGetEthPrice } from '../shared/hooks/usePriceFeed';
+import { useGetEthPrice } from '../shared/hooks/usePriceFeed';
 import { useHandleChangeWithState } from '../shared/hooks/useHandleChange';
 import { useGetRoundTimestamps, usePayOut, usePlace } from '../shared/hooks/useBinaryOptions';
 
 const Place = () => {
   const balance = useBalance();
-  // const { price } = useGetEthPrice() || {};
-  const price = 400;
+  const { price } = useGetEthPrice() || {};
   const timestamps = useGetRoundTimestamps();
   const place = usePlace();
   const needBalance = useNeedBalance();
@@ -59,7 +58,7 @@ const Place = () => {
   return (
     <NesContainer className='with-title'>
       <NesTitle>Place Binary Option</NesTitle>
-      <p><NesIcon /> ETH price: {price} ETH</p>
+      <p><NesIcon /> ETH price: ${price?.toFixed(4) || '-'} </p>
       <p><NesIcon /> Current Balance: {balance} BIN</p>
       <NesSelect
         id='timestamp'
