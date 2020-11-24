@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div`
-  margin: 20px 0;
+  margin: 30px 0;
 `;
 
 type Props = {
