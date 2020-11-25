@@ -6,14 +6,9 @@ import { useExecute, useInitializeContract as useBinaryOptionsContract, useOptio
 import { useInitializeContract as useBinTokenContract } from './shared/hooks/useBinToken';
 
 import Loading from './components/Loading';
-import BuySell from './components/BuySell';
-import Place from './components/Place';
-import Collect from './components/Collect';
-import NesDialog from './shared/components/NesDialog';
-import NesBalloonSection from './shared/components/NesBalloonSection';
-import NesBalloon from './shared/components/NesBalloon';
-import NesContainer from './shared/components/NesContainer';
 import NavBar from './components/NavBar';
+import About from './components/About';
+import Home from './components/Home';
 
 const Container = styled.div`
   display: block;
@@ -36,15 +31,16 @@ const App = () => {
   const binaryOptionsContract = useBinaryOptionsContract();
   const binTokenContract = useBinTokenContract();
   const execute = useExecute();
-  let home = null;
-  let about = null;
+  let home = true;
+  let about = false;
   
   window.execute = (timestamp: number) => execute && execute(timestamp);
 
-  const pageClickHandler = (pageSelected: string) => {
-    
-    
-    setPageDysplay(pageSelected);
+  const pageHomeHandler = () => {
+    setPageDysplay("home");
+  }
+  const pageAboutHandler = () => {
+    setPageDysplay("about");
   }
   
   const options = useOptions();
@@ -58,45 +54,20 @@ const App = () => {
   }
 
   if (pageDisplay === "home") {
-    home = (
-      <NesContainer>
-        <NesBalloonSection>
-          <NesBalloon left>BIN Token is an ETH backed coin, BIN supply is governed only by binary options payments.</NesBalloon>
-          <NesBalloon right>Tokens will be minted in case winner options cannot be payed, and will be burned if BIN contract balance increase.</NesBalloon>
-        </NesBalloonSection>
-        <BuySell/>
-        <Place />
-        <Collect />
-        <NesDialog rounded/>
-      </NesContainer>
-    );
-    about = null; 
-  } else {
-    about = (
-      <NesContainer>
-          <p style={{textDecoration: 'underline'}}>About</p>
-          <NesBalloonSection>
-            <NesBalloon left>A binary option is a financial product where the buyer receives a payout or loses their investment based on whether the option expires in the money.</NesBalloon>
-            <NesBalloon right>Binary options depend on the outcome of a "yes or no" proposition, hence the name "binary." Binary options have an expiry date and/or time, in our case we have both.</NesBalloon>
-          </NesBalloonSection>
-        </NesContainer>
-    );
-    home = null;
+    home = true;
+    about = false; 
+  } 
+  if (pageDisplay === "about") {
+    about = true;
+    home = false;
   }
-  
+
   return (
     <Container >
-      <NavBar />
-      <nav style={{height: '50px', marginTop: '50px'}}>
-        <button onClick={() => pageClickHandler('home')}>
-          Home
-        </button>
-        <button onClick={() => pageClickHandler('about')}>
-          About  
-        </button>
-      </nav>
-      {about}
-      {home}
+      <NavBar pageHomeHandler={pageHomeHandler}
+              pageAboutHandler={pageAboutHandler}/>
+      {about && <About />}
+      {home && <Home />}
     </Container> 
   );
 };
