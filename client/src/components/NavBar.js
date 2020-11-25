@@ -5,7 +5,7 @@ import React from 'react';
 //     pageAboutHandler?: (event: React.ChangeEvent<HTMLInputElement>) => void,
 //   }
 
-const NavBar = (props: any) => {
+const NavBar = (props) => {
 
     return (
         <nav style={{height: '50px', marginTop: '50px'}}>
