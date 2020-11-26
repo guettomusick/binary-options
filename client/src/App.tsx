@@ -57,6 +57,7 @@ const App = () => {
     home = true;
     about = false; 
   } 
+  
   if (pageDisplay === "about") {
     about = true;
     home = false;
