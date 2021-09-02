@@ -1,10 +1,13 @@
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.8.0;
+// SPDX-License-Identifier: ISC
 
-import './LinkTokenInterface.sol';
-import './AggregatorV3Interface.sol';
+pragma solidity >=0.6.0 <0.9.0;
+
 import './BinToken.sol';
-import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/utils/math/Math.sol';
+
+import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol';
+import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 
 contract BinaryOptions {
   //Overflow safe operators
@@ -14,9 +17,11 @@ contract BinaryOptions {
 
   // Constants
   uint256 constant interval = 10 minutes;
+  uint256 constant MAX_INT = 2**256 - 1;
   
-  //Pricefeed interfaces
-  AggregatorV3Interface internal ethFeed;
+  IUniswapV2Router01 immutable router;
+  address immutable tokenIn;
+  address immutable tokenOut;
   uint256 ethPrice;
 
   BinToken public token;
@@ -53,10 +58,16 @@ contract BinaryOptions {
   mapping(address => uint32[]) public collectedOptions;
 
   //Kovan feeds: https://docs.chain.link/docs/reference-contracts
-  constructor(address ethFeedAddress) public {
-    token = new BinToken();
-    //ETH/USD Kovan feed
-    ethFeed = AggregatorV3Interface(ethFeedAddress);
+  constructor(address routerAddress, address _tokenIn, address _tokenOut) {
+    BinToken _token = new BinToken();
+    token = _token;
+
+    _token.approve(address(this), MAX_INT);
+
+    IUniswapV2Router01 _router = IUniswapV2Router01(routerAddress);
+    router = _router;
+    tokenIn = _tokenIn;
+    tokenOut = _tokenOut;
 
     owner = msg.sender;
   }
@@ -86,18 +97,23 @@ contract BinaryOptions {
     @dev Returns the latest ETH price
    */ 
   function getEthPrice() public view returns (uint64) {
-    (
-      uint80 roundID, 
-      int price,
-      uint256 startedAt,
-      uint256 timeStamp,
-      uint80 answeredInRound
-    ) = ethFeed.latestRoundData();
-    // If the round is not complete yet, timeStamp is 0
-    require(timeStamp > 0, 'Round not complete');
-    //Price should never be negative thus cast int to unit is ok
-    //Price is 8 decimal places and will require 1e10 correction later to 18 places
-    return uint64(price);
+    address[] memory path;
+    // if (_tokenIn == WETH || _tokenOut == WETH) {
+    //   path = new address[](2);
+    //   path[0] = _tokenIn;
+    //   path[1] = _tokenOut;
+    // } else {
+    //   path = new address[](3);
+    //   path[0] = _tokenIn;
+    //   path[1] = WETH;
+    //   path[2] = _tokenOut;
+    // }
+    path = new address[](2);
+    path[0] = tokenIn;
+    path[1] = tokenOut;
+    uint256[] memory amountOut = router.getAmountsOut(1000, path);
+
+    return uint64(amountOut[path.length -1]);
   }
 
   /**
@@ -192,7 +208,7 @@ contract BinaryOptions {
     token.burnFrom(msg.sender, amount);
 
     // transfer ETH from contract
-    msg.sender.transfer(binToEther(amount, price));
+    payable(msg.sender).transfer(binToEther(amount, price));
     emit Sold(msg.sender);
   }
 
@@ -208,7 +224,7 @@ contract BinaryOptions {
     require(allowance >= amount, "Check the token allowance");
     require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
     // Get next round timestamp
-    uint256 nextRound = now.sub(now.mod(interval)).add(interval);
+    uint256 nextRound = block.timestamp.sub(block.timestamp.mod(interval)).add(interval);
     require(timeStamp > nextRound, "You can't bet for next round");
     
     // Collect Tokens on internal wallet
@@ -233,7 +249,7 @@ contract BinaryOptions {
       amount,
       index,
       getPayOut(timeStamp, higher),
-      msg.sender,
+      payable(msg.sender),
       false
     ));
     emit Place(msg.sender, timeStamp);
@@ -246,7 +262,7 @@ contract BinaryOptions {
   function executeRound(uint32 timeStamp) public {
     Round storage round = rounds[timeStamp];
     require(msg.sender == owner, "Only owner can execute round");
-    require(timeStamp <= now, "Can't execute a future round");
+    require(timeStamp <= block.timestamp, "Can't execute a future round");
     require(timeStamp.mod(interval) == 0, "Timestamp must be multiple of interval");
     require(round.options > 0, "No data for current round");
     require(!round.executed, "Round already executed");

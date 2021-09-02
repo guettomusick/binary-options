@@ -5,6 +5,8 @@ import { ethers } from 'ethers';
 
 import { setProvider, setSigner, setAccounts } from '../redux/wallet';
 
+export const gasPrice = ethers.utils.parseUnits('5', 'gwei');
+
 export const useInitializeWallet = () => {
   const dispatch = useDispatch();
   const { provider } = useSelector(state => state.wallet);

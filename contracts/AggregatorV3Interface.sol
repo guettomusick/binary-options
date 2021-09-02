@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: ISC
+
 pragma solidity >=0.6.0;
 
 interface AggregatorV3Interface {

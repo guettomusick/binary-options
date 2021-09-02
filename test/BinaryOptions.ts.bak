@@ -4,7 +4,6 @@ import { expect } from 'chai';
 
 import { timeTravel, timeSet, timeSave, timeRevert } from './utils/time';
 
-import AggregatorV3Interface from '../client/src/artifacts/contracts/AggregatorV3Interface.sol/AggregatorV3Interface.json';
 import { MockContract } from 'ethereum-waffle';
 
 const {

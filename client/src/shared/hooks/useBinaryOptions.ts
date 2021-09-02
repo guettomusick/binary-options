@@ -1,3 +1,4 @@
+import { BinaryOptions as TBinaryOptions } from './../types/typechain/BinaryOptions.d';
 import { useGetBalance } from './useBinToken';
 import { useLoadingDialog } from './useDialog';
 import { useEffect, useCallback, useState } from 'react';
@@ -9,7 +10,7 @@ import { setContract, setToken, setPrice, setOptions, setSummary, Option, setPay
 
 import BinaryOptions from '../../artifacts/contracts/BinaryOptions.sol/BinaryOptions.json';
 import Networks from '../../config/networks.json';
-import { useSigner } from './useWallet';
+import { useSigner, gasPrice } from './useWallet';
 
 export const useGetPrice = () => {
   const contract = useContract();
@@ -42,7 +43,7 @@ export const useGetOptions = () => {
         const readyToCollectOptions = [];
         const collectedOptions = [];
 
-        for (let i=0; i<pendingOptionsLength; i++) {
+        for (let i=0; i<pendingOptionsLength.toNumber(); i++) {
           const optionIndex = await contract.pendingOptions(address, i);
           const option = await contract.options(optionIndex);
           const round = await contract.rounds(option.execute);
@@ -53,7 +54,7 @@ export const useGetOptions = () => {
             pendingOptions.push(option);
           }
         }
-        for (let i=0; i<collectedOptionsLength; i++) {
+        for (let i=0; i<collectedOptionsLength.toNumber(); i++) {
           const optionIndex = await contract.collectedOptions(address, i);
           const option = await contract.options(optionIndex);
           collectedOptions.push(option);
@@ -161,6 +162,7 @@ export const useInitializeContract = () => {
   useRegisterEvents(contract);
 
   const networks = Networks.BinaryOptions;
+  console.log(networks);
 
   return useAddContract(
     contract,
@@ -169,7 +171,7 @@ export const useInitializeContract = () => {
   );
 }
 
-export const useContract = () => useSelector(state => state.binaryOptions.contract);
+export const useContract = () => useSelector(state => state.binaryOptions.contract as TBinaryOptions);
 
 export const useToken = () => {
   const dispatch = useDispatch();
@@ -215,7 +217,7 @@ export const useBuy = () => {
       if (contract && getBalance) {
         try {
           show();
-          const tx = await contract.buy({ value: ethers.utils.parseEther(amount) })
+          const tx = await contract.buy({ value: ethers.utils.parseEther(amount), gasPrice })
           const receipt = await tx.wait();
           await getBalance();
           return { tx, receipt };
@@ -242,7 +244,7 @@ export const useSell = () => {
       if (contract && getBalance) {
         try {
           show();
-          const tx = await contract.sell(ethers.utils.parseEther(amount));
+          const tx = await contract.sell(ethers.utils.parseEther(amount), { gasPrice });
           const receipt = await tx.wait();
           await getBalance();
           return { tx, receipt };
@@ -285,7 +287,7 @@ export const usePlace = () => {
       if (contract) {
         try {
           show();
-          const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher);
+          const tx = await contract.place(timestamp, ethers.utils.parseEther(amount), higher, { gasPrice });
           const receipt = await tx.wait();
           await update(timestamp);
           return { tx, receipt };
@@ -312,7 +314,7 @@ export const useCollect = () => {
       if (contract) {
         try {
           show();
-          const tx = await contract.collect();
+          const tx = await contract.collect({ gasPrice });
           const receipt = await tx.wait();
           await update();
           return { tx, receipt };
@@ -359,7 +361,7 @@ export const useExecute = () => {
     async (timestamp) => {
       if (contract) {
         try {
-          const tx = await contract.executeRound(timestamp);
+          const tx = await contract.executeRound(timestamp, { gasPrice });
           console.log(tx);
           const receipt = await tx.wait();
           console.log(receipt);
