@@ -10,33 +10,43 @@ import Networks from '../client/src/config/networks.json';
 let prevRoundTime = 0;
 
 async function main() {
-  const provider = ethers.getDefaultProvider('rinkeby', {
-    infura: '2ff6f33efc85489db0c63eb24d007492',
+  const provider = new ethers.providers.AlchemyProvider({
+    ensAddress: 'https://polygon-mainnet.g.alchemy.com/v2/o7LxJAavPv1Ph5QH63qoARjG34LFovhC',
+    chainId: 137,
+    name: 'matic',
   });
   const wallet = ethers.Wallet.fromMnemonic(mnemonic);
   const signer = wallet.connect(provider);
-  const contract = new ethers.Contract(Networks.BinaryOptions['4'].address, BinaryOptions.abi, signer);
+  const contract = new ethers.Contract(Networks.BinaryOptions['137'].address, BinaryOptions.abi, signer);
 
-  setInterval(async () => {
-    const lastRoundTime = Math.floor(Date.now()/1000/600)*600;
-    if (prevRoundTime !== lastRoundTime) {
+  const executeRound = async (timestamp: number) => {
+    if (prevRoundTime !== timestamp) {
       try {
-        const lastRound = await contract.rounds(lastRoundTime);
+        const lastRound = await contract.rounds(timestamp);
         if (!lastRound.executed && lastRound.options > 0) {
-          await contract.executeRound(lastRoundTime);
-          console.log(`Executed round ${lastRoundTime}`);
+          await contract.executeRound(timestamp);
+          console.log(`Executed round ${timestamp}`);
         } else {
           console.log(lastRound.executed
-            ? `Round ${lastRoundTime} already executed`
-            : `No options at Round ${lastRoundTime}`
+            ? `Round ${timestamp} already executed`
+            : `No options at Round ${timestamp}`
           );
         }
-        prevRoundTime = lastRoundTime;
+        prevRoundTime = timestamp;
       } catch(error) {
         console.error(error);
       }
     }
-  }, 5000);
+  }
+
+  setInterval(() => executeRound(Math.floor(Date.now()/1000/600)*600), 5000);
+
+  // Catchup
+  let current = Date.now()-48*3600*1000;
+    while(current < Date.now()) {
+      executeRound(Math.floor(current/1000/600)*600);
+      current += 600000;
+    }
 };
 
 main();
