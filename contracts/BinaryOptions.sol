@@ -319,6 +319,7 @@ contract BinaryOptions {
   function collect() public {
     uint32[] storage pending = pendingOptions[msg.sender];
     uint256 amount;
+    uint256 burn;
 
     for (uint32 i=0; i<pending.length;) {
       Option storage option = options[pending[i]];
@@ -330,6 +331,8 @@ contract BinaryOptions {
           // add amount to total transaction
           amount += option.amount.mul(100000+option.payout).div(100000);
           option.winner = true;
+        } else {
+          burn += option.amount;
         }
 
         deletePending(i);
@@ -350,6 +353,13 @@ contract BinaryOptions {
       }
       // Send the total amount to the winner
       token.transfer(msg.sender, amount);
+    }
+    if (burn > 0) {
+      uint256 balance = token.balanceOf(address(this));
+      if (burn > balance) {
+        burn = balance;
+      }
+      token.burn(burn);
     }
     emit Collect(msg.sender);
   }
